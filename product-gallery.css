@@ -120,8 +120,8 @@
 
 /* 2. Bottom Frame Position */
 #sns_woo_list .item-img-info::before {
-  bottom: 0;
-  left: 0;
+  bottom: 2px;
+  left: 2px;
   background-position: bottom left;
 }
 

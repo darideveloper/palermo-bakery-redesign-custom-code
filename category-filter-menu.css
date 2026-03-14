@@ -1,0 +1,111 @@
+/* --- 1. MAIN MENU WRAPPER --- */
+#woocommerce_product_categories-3 {
+  text-align: center;
+  width: 100% !important;
+  margin-bottom: 40px;
+}
+
+#woocommerce_product_categories-3 ul.product-categories {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+/* --- 2. INDIVIDUAL PILL BUTTONS --- */
+#woocommerce_product_categories-3 ul.product-categories li {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+#woocommerce_product_categories-3 ul.product-categories li a {
+  display: inline-block;
+  padding: 10px 24px;
+  border-radius: 50px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  text-decoration: none;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+/* --- 3. ACTIVE & HOVER STATES --- */
+
+/* 1. Base style for the underline (Hidden by default) */
+#woocommerce_product_categories-3 ul.product-categories li a {
+  position: relative; /* Required for the absolute underline */
+  display: inline-block;
+  padding: 10px 24px;
+  transition: all 0.3s ease;
+}
+
+#woocommerce_product_categories-3 ul.product-categories li a::after {
+  content: '';
+  position: absolute;
+  bottom: 8px; /* Distance from the bottom of the pill */
+  left: 50%; /* Start in the middle */
+  width: 0; /* Start at 0 width */
+  height: 2px; /* Thickness of the underline */
+  background-color: #333333; /* Underline color */
+  transition:
+    width 0.3s ease,
+    left 0.3s ease;
+}
+
+/* 2. Hover effect for standard (inactive) buttons */
+#woocommerce_product_categories-3 ul.product-categories li a:hover {
+  background-color: #f5f5f5;
+  border-color: #d1d1d1;
+  color: #333333;
+  transform: scale(1.05);
+  padding: 12px 28px;
+}
+
+/* Trigger the underline on hover */
+#woocommerce_product_categories-3 ul.product-categories li a:hover::after {
+  width: 40%; /* Final width of the underline */
+  left: 30%; /* Keeps it centered (50% - half of width) */
+}
+
+/* 3. ACTIVE FILTER (Stays static) */
+#woocommerce_product_categories-3 ul.product-categories li.current-cat a {
+  background-color: #333333;
+  color: #ffffff !important;
+  border-color: #333333;
+  font-weight: 600;
+}
+
+/* Disable all hover effects for the CURRENT active category */
+#woocommerce_product_categories-3 ul.product-categories li.current-cat a:hover {
+  transform: scale(1);
+  padding: 10px 24px;
+  cursor: default;
+}
+
+/* Ensure no underline appears on the active button hover */
+#woocommerce_product_categories-3
+  ul.product-categories
+  li.current-cat
+  a:hover::after {
+  width: 0;
+}
+
+/* --- 4. CATEGORY MOBILE ADJUSTMENTS --- */
+@media (max-width: 991px) {
+  #woocommerce_product_categories-3 ul.product-categories {
+    gap: 10px;
+  }
+  #woocommerce_product_categories-3 ul.product-categories li {
+    font-size: 14px;
+  }
+}
+
+/* --- 5. HIDE CHECKBOXES & COUNTS --- */
+#woocommerce_product_categories-3 ul.product-categories li .count,
+.widget.widget_product_categories > ul > li .accr_header a:before,
+.widget.widget_product_categories > ul > li > a:before {
+  display: none !important;
+}

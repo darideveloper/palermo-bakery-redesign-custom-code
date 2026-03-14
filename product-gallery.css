@@ -1,0 +1,95 @@
+/* =========================================
+   FILE 3: PRODUCT GALLERY & LIGHTBOX
+   ========================================= */
+
+/* --- 1. CLEAN GALLERY CARDS (HIDE TEXT/BUTTONS) --- */
+#sns_woo_list .item-content,
+#sns_woo_list .item-box-hover,
+#sns_woo_list .product-shop {
+  display: none !important;
+}
+
+#sns_woo_list .block-product-inner {
+  padding: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  height: 100%;
+}
+
+/* --- 2. IMAGE CONTAINERS & HOVER ANIMATION --- */
+
+/* Force the anchor and the image to occupy 100% width */
+#sns_woo_list .item-img-info a.product-image,
+#sns_woo_list .item-img a.product-image {
+  display: block !important;
+  width: 100% !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+}
+
+#sns_woo_list .item-img-info a.product-image img,
+#sns_woo_list .item-img a.product-image img {
+  transition: transform 0.6s ease-in-out !important;
+  width: 100% !important; /* Force fill horizontal */
+  height: 100% !important; /* Force fill vertical */
+  object-fit: cover; /* Ensures image isn't distorted while filling space */
+  display: block;
+  cursor: pointer;
+  border-radius: 12px !important;
+}
+
+/* Maintain the double zoom effect */
+#sns_woo_list .block-product-inner:hover {
+  transform: scale(1.05) !important;
+  z-index: 10;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+#sns_woo_list .block-product-inner:hover .product-image img {
+  transform: scale(1.1) !important;
+}
+
+/* --- 3. PRETTYPHOTO LIGHTBOX MOBILE FIX --- */
+@media (max-width: 767px) {
+  div.pp_pic_holder {
+    width: 95% !important;
+    left: 2.5% !important;
+    margin-left: 0 !important;
+    box-sizing: border-box;
+  }
+
+  div.pp_content,
+  div.pp_content_container .pp_left,
+  div.pp_content_container .pp_right,
+  .pp_hoverContainer {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  #pp_full_res > img {
+    width: 100% !important;
+    height: auto !important;
+    max-width: 100% !important;
+    max-height: 80vh !important;
+    object-fit: contain;
+  }
+
+  a.pp_close {
+    top: 0 !important;
+    right: 0 !important;
+    z-index: 9999 !important;
+  }
+
+  a.pp_expand {
+    display: none !important;
+  }
+}
+
+/* adapt images to 100% size of the container */
+
+.product_list.grid .block-product-inner .item-img {
+  padding: 0 !important;
+}

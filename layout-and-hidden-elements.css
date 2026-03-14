@@ -1,0 +1,56 @@
+/* --- 1. MAIN GRID LAYOUT --- */
+.row.sns-content.sns-woocommerce-page {
+  display: flex;
+  flex-direction: column;
+}
+
+.row.sns-content.sns-woocommerce-page > .sns-left {
+  order: -1 !important;
+  width: 100% !important;
+  margin-bottom: 30px;
+}
+
+.row.sns-content.sns-woocommerce-page > .sns-main {
+  width: 100% !important;
+}
+
+#sns_content .sns-right,
+#sns_content .sns-left {
+  margin-bottom: 0px !important;
+}
+
+@media (min-width: 992px) {
+  #sns_woo_list > .product {
+    width: 25% !important;
+  }
+}
+
+/* --- 2. MOBILE & TABLET LAYOUT --- */
+@media (max-width: 991px) {
+  .row.sns-content.sns-woocommerce-page > .sns-left {
+    display: block !important;
+    position: relative !important;
+    left: 0 !important;
+    right: 0 !important;
+    transform: none !important;
+    width: 100% !important;
+    height: auto !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 10 !important;
+    margin-bottom: 20px !important;
+  }
+}
+
+/* --- 3. HIDDEN ELEMENTS --- */
+#woocommerce_recently_viewed_products-4,
+#sns_breadcrumbs,
+#woocommerce_product_search-2 {
+  display: none;
+}
+
+.sns-woocommerce-page .page-title,
+.sns-woocommerce-page .term-description,
+.sns-woocommerce-page .toolbar.toolbar-top {
+  display: none !important;
+}

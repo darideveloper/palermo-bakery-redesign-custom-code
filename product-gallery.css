@@ -89,7 +89,50 @@
 }
 
 /* adapt images to 100% size of the container */
-
 .product_list.grid .block-product-inner .item-img {
   padding: 0 !important;
+}
+
+/* --- 4. FULL-WIDTH DYNAMIC FRAMES (BOTTOM & TOP-RIGHT) --- */
+
+/* 1. Ensure the container is the anchor point */
+#sns_woo_list .item-img-info {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+/* Base styles for both frames */
+#sns_woo_list .item-img-info::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  padding-top: 25%; /* Adjust height based on your frame design */
+  background-image: url('/wp-content/uploads/2026/03/images-frame-black-v2.webp');
+  background-size: contain;
+  background-repeat: no-repeat;
+  opacity: 0.6;
+  transition:
+    opacity 0.4s ease-in-out,
+    transform 0.4s ease-in-out;
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* 2. Bottom Frame Position */
+#sns_woo_list .item-img-info::before {
+  bottom: 0;
+  left: 0;
+  background-position: bottom left;
+}
+
+/* 4. Hover Effect - Full visibility for both */
+#sns_woo_list .block-product-inner:hover .item-img-info::before,
+#sns_woo_list .block-product-inner:hover .item-img-info::after {
+  opacity: 1;
+}
+
+/* Slightly offset the frames on hover to follow the "Double Zoom" feel */
+#sns_woo_list .block-product-inner:hover .item-img-info::after {
+  transform: rotate(180deg) scale(1.05);
 }

@@ -56,7 +56,6 @@
 @media (max-width: 767px) {
   div.pp_pic_holder {
     width: 95% !important;
-    left: 2.5% !important;
     margin-left: 0 !important;
     box-sizing: border-box;
   }

@@ -135,3 +135,15 @@
 #sns_woo_list .block-product-inner:hover .item-img-info::after {
   transform: rotate(180deg) scale(1.05);
 }
+
+/* two columns in mobile */
+@media (max-width: 767px) {
+  #sns_woo_list > div {
+    width: 50% !important
+  }
+}
+
+/* remove extra icon in header */
+.main-header .btn2.btn-navbar.leftsidebar {
+  display: none !important;
+}

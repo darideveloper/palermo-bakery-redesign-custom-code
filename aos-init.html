@@ -1,0 +1,22 @@
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  
+  // 1. Target all images in your posts and add a "zoom-in" effect
+  const images = document.querySelectorAll('.wp-block-image, img');
+  images.forEach(img => {
+    img.setAttribute('data-aos', 'zoom-in');
+  });
+
+  // 2. Target all Level 2 Headings and add a "fade-right" effect
+  const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6, a');
+  headings.forEach(h2 => {
+    h2.setAttribute('data-aos', 'fade-right');
+  });
+
+  // IMPORTANT: Re-initialize AOS so it "sees" the new attributes
+  AOS.init({
+  	duration: 1200,  // Change this number to speed up or slow down
+  });
+});
+</script>

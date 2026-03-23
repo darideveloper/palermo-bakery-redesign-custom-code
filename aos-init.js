@@ -31,7 +31,7 @@
     if (typeof AOS !== 'undefined') {
       AOS.init({
         duration: 800,
-        once: true,
+        once: false,
         offset: 50, // Smaller offset for better mobile triggers
         disable: false
       });

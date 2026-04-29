@@ -106,3 +106,198 @@
 .page-id-1122 .wpcf7-submit:hover {
     background-color: #555555 !important;
 }
+
+/* =========================================
+   FORM ALIGNMENT FIXES
+   ========================================= */
+
+/* 1. Force all input boxes to align perfectly at the bottom, regardless of text length */
+.cake-form-grid .form-field {
+    height: 100%;
+}
+.page-id-1122 .wpcf7-form .form-field label {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    margin-bottom: 0 !important;
+}
+.page-id-1122 .wpcf7-form .form-field label strong {
+    margin-bottom: auto; /* Pushes the input field down to the bottom line */
+    padding-bottom: 8px; /* Safe spacing */
+}
+.page-id-1122 .wpcf7-form .form-field label br {
+    display: none !important; /* Hides the manual line-breaks so Flexbox takes over */
+}
+
+/* Fix specific to the native browser padding on the Date field */
+.page-id-1122 .wpcf7-form input[type="date"] {
+    padding: 0 15px !important; /* Uses your 0px top/bottom fix, keeps the 15px side padding to match the others */
+}
+
+/* 2. Vertically center the checkboxes with their text */
+.color-selection span.wpcf7-list-item label {
+    display: flex !important;
+    align-items: center !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+}
+.color-selection input[type="checkbox"] {
+    margin: 0 8px 0 0 !important;
+    position: relative;
+    top: -1px; /* Nudges the box down a hair for perfect visual centering */
+}
+
+/* =========================================
+   CUSTOM FILE UPLOAD BUTTON
+   ========================================= */
+
+/* 1. Style the overall container to look like a modern drop-zone */
+.page-id-1122 .wpcf7-form input[type="file"] {
+    width: 100%;
+    padding: 8px; /* Slightly tighter padding to account for the inner button */
+    background: #fafafa;
+    border: 2px dashed #d1d1d1; /* Dashed border implies an upload area */
+    border-radius: 8px;
+    color: #666666;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    outline: none;
+}
+
+/* Change border color when the user hovers over the upload box */
+.page-id-1122 .wpcf7-form input[type="file"]:hover {
+    border-color: #333333;
+    background: #ffffff;
+}
+
+/* 2. Style the actual "Choose File" button inside the box */
+.page-id-1122 .wpcf7-form input[type="file"]::file-selector-button {
+    background-color: #333333;
+    color: #ffffff;
+    border: none;
+    padding: 10px 18px;
+    margin-right: 15px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background-color 0.3s ease;
+}
+
+/* Hover effect for the inner button */
+.page-id-1122 .wpcf7-form input[type="file"]::file-selector-button:hover {
+    background-color: #555555;
+}
+
+/* =========================================
+   CUSTOM IMAGE CAPTCHA STYLING
+   ========================================= */
+
+/* 1. Force the Captcha wrapper to be 100% full-width */
+.page-id-1122 .captcha-wrap,
+.page-id-1122 .wpcf7-form-control-wrap.kc_captcha,
+.page-id-1122 .wpcf7-form-control.wpcf7-radio {
+    display: block !important;
+    width: 100% !important;
+}
+
+/* 2. Style the box to perfectly match your other input fields */
+.page-id-1122 .captcha-image {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 20px;
+    background: #fafafa;
+    border: 1px solid #d1d1d1;
+    border-radius: 8px;
+    box-sizing: border-box;
+    margin-bottom: 20px;
+}
+
+/* 3. Style the instructions text */
+.page-id-1122 .cf7ic_instructions {
+    font-weight: 600;
+    color: #333333;
+    font-size: 15px;
+    margin-bottom: 15px;
+    text-align: center;
+    width: 100%;
+}
+.page-id-1122 .cf7ic_instructions span {
+    color: #000000;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+/* 4. Hide the ugly default radio buttons */
+.page-id-1122 .captcha-image input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* 5. Style the clickable SVG icons */
+.page-id-1122 .captcha-image > label {
+    display: inline-flex;
+    justify-content: center;
+    margin: 0 15px;
+    cursor: pointer;
+}
+.page-id-1122 .captcha-image svg {
+    width: 45px !important;
+    height: 45px !important;
+    color: #888888;
+    padding: 10px;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+/* 6. Hover & Selected states for the icons */
+.page-id-1122 .captcha-image label:hover svg {
+    background: #eaeaea;
+    color: #333333;
+}
+.page-id-1122 .captcha-image input[type="radio"]:checked + svg {
+    color: #333333;
+    border-color: #333333;
+    background: #ffffff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* =========================================
+   CAPTCHA ALIGNMENT & ERROR MESSAGE FIXES
+   ========================================= */
+
+/* 1. Force Captcha icons to sit horizontally side-by-side */
+.page-id-1122 .captcha-image {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+}
+
+/* Ensure the horizontal icons have nice breathing room */
+.page-id-1122 .captcha-image > label {
+    margin: 10px 15px 0 15px !important;
+}
+
+/* 2. Clean up CF7 Validation Error Text so it doesn't break the layout */
+.page-id-1122 span.wpcf7-not-valid-tip {
+    font-size: 13px !important;
+    color: #d93025 !important;
+    margin-top: 8px !important;
+    font-weight: 500 !important;
+    display: block !important;
+    line-height: 1.2 !important;
+}
+
+/* Ensure the hidden wrapper for errors acts like a clean block */
+.page-id-1122 .wpcf7-form-control-wrap {
+    display: block !important;
+    width: 100% !important;
+}

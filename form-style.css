@@ -50,7 +50,8 @@
 }
 
 /* 4. Form Fields & Typography */
-.page-id-1122 .wpcf7-form label {
+.page-id-1122 .wpcf7-form label,
+#my-proprietary-form label {
     display: block;
     font-weight: 600;
     color: #333333;
@@ -62,7 +63,11 @@
 .page-id-1122 .wpcf7-form input[type="tel"],
 .page-id-1122 .wpcf7-form input[type="date"],
 .page-id-1122 .wpcf7-form select,
-.page-id-1122 .wpcf7-form textarea {
+.page-id-1122 .wpcf7-form textarea,
+#my-proprietary-form input[type="text"],
+#my-proprietary-form input[type="email"],
+#my-proprietary-form input[type="tel"],
+#my-proprietary-form textarea {
     width: 100%;
     height: auto !important;
     min-height: 48px;
@@ -78,7 +83,9 @@
 
 .page-id-1122 .wpcf7-form input:focus,
 .page-id-1122 .wpcf7-form select:focus,
-.page-id-1122 .wpcf7-form textarea:focus {
+.page-id-1122 .wpcf7-form textarea:focus,
+#my-proprietary-form input:focus,
+#my-proprietary-form textarea:focus {
     outline: none;
     border-color: #333333;
     background: #ffffff;

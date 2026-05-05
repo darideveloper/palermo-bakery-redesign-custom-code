@@ -64,7 +64,8 @@
 }
 
 /* 6. Submit Button */
-#sns_footer .wpb_raw_html form button[type="submit"] {
+#sns_footer .wpb_raw_html form button[type="submit"],
+#my-proprietary-form button[type="submit"] {
     background-color: #333333 !important;
     color: #ffffff !important;
     border: none !important;
@@ -79,6 +80,7 @@
     display: inline-block;
 }
 
-#sns_footer .wpb_raw_html form button[type="submit"]:hover {
+#sns_footer .wpb_raw_html form button[type="submit"]:hover,
+#my-proprietary-form button[type="submit"]:hover {
     background-color: #555555 !important;
 }

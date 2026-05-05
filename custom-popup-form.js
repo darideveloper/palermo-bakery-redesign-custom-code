@@ -29,13 +29,12 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="popup-content">
                 <p class="popup-intro">Do you want to order a cake or have any questions for one of our cake consultants? Fill out this form and they will contact within 24-48 hours.</p>
-                <form id="my-proprietary-form" action="/contact-form/" method="post">
+                <form id="my-proprietary-form" action="https://services.darideveloper.com/contact-form/" method="post">
                     <!-- Api inputs (Hidden) -->
                     <input type="hidden" name="api_key" value="dID804XfI3tGiZEfp6mvahNsmBf1pR">
                     <input type="hidden" name="user" value="palermo">
                     <input type="hidden" name="subject" value="New contact from custom popup form">
-                    <input type="hidden" name="redirect" value="https://www.darideveloper.com">
-
+                  
                     <!-- Contact inputs -->
                     <div class="form-field">
                         <label>Name

@@ -5,8 +5,8 @@
 /* 1. Wrapper and General Positioning */
 #custom-popup-wrapper {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
+    bottom: 24px;
+    right: 65px;
     z-index: 9999;
     font-family: inherit; /* Inherit theme font */
 }
@@ -83,7 +83,7 @@
     box-sizing: border-box;
 }
 
-#popup-form-container.hidden {
+#popup-form-container.popup-hidden {
     opacity: 0;
     visibility: hidden;
     transform: translateY(20px);

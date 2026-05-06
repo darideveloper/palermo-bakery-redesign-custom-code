@@ -1,0 +1,23 @@
+# Tasks: Update Custom Popup Form to use Contact Form 7
+
+- [x] Update `custom-popup-form.js` logic <!-- id: 0 -->
+    - [x] Remove hardcoded form HTML from `formHTML` string.
+    - [x] Update injection logic to only include the popup shell.
+    - [x] Implement robust form relocation logic (prioritizing `#wpcf7-f1874-o1`).
+    - [x] Add logic to show the form container only after relocation.
+    - [x] Remove custom `fetch` submission handler entirely.
+    - [x] Add CF7 `wpcf7mailsent` event listener to auto-close the popup.
+- [x] Update `custom-popup-form.css` styling <!-- id: 1 -->
+    - [x] Add rule to hide source form container via `display: none`.
+    - [x] Implement "reset" styles for CF7 native `<p>` and `<br>` wrappers.
+    - [x] Target CF7-specific classes for inputs, labels, and buttons.
+    - [x] Style `.wpcf7-response-output`, `.wpcf7-not-valid-tip`, and `.wpcf7-spinner`.
+    - [x] Ensure proper spacing and alignment within the popup.
+    - [x] Verify responsiveness of the CF7 form in the mobile modal.
+- [x] Update `openspec/specs/form-frontend/spec.md` <!-- id: 2 -->
+    - [x] Reflect the shift from proprietary API to CF7 integration.
+    - [x] Update scenarios to include CF7 event triggers.
+- [x] Validation <!-- id: 3 -->
+    - [x] Verify the popup opens and displays the CF7 form.
+    - [x] Verify successful submission closes the popup and shows a message.
+    - [x] Verify mobile layout integrity.

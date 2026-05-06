@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Inject the HTML into the body
-    const formHTML = `
+    // 1. Inject the Popup Shell (Wrapper and Button) into the body
+    const popupShellHTML = `
     <div id="custom-popup-wrapper">
         <!-- Floating Cupcake Trigger Button -->
         <button id="form-trigger-btn" aria-label="Ask Me">
@@ -28,50 +28,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button id="close-popup-btn" aria-label="Close form">&times;</button>
             </div>
             <div class="popup-content">
-                <p class="popup-intro">Do you want to order a cake or have any questions for one of our cake consultants? Fill out this form and they will contact within 24-48 hours.</p>
-                <form id="my-proprietary-form" action="https://services.darideveloper.com/contact-form/" method="post">
-                    <!-- Api inputs (Hidden) -->
-                    <input type="hidden" name="api_key" value="dID804XfI3tGiZEfp6mvahNsmBf1pR">
-                    <input type="hidden" name="user" value="palermo">
-                    <input type="hidden" name="subject" value="New contact from custom popup form">
-                  
-                    <!-- Contact inputs -->
-                    <div class="form-field">
-                        <label>Name
-                            <input type="text" name="name" placeholder="Name" required>
-                        </label>
-                    </div>
-                    <div class="form-field">
-                        <label>Email
-                            <input type="email" name="email" placeholder="Email" required>
-                        </label>
-                    </div>
-                    <div class="form-field">
-                        <label>Phone
-                            <input type="tel" name="phone" placeholder="Phone">
-                        </label>
-                    </div>
-                    <div class="form-field">
-                        <label>Message
-                            <textarea name="message" placeholder="Message" required></textarea>
-                        </label>
-                    </div>
-                    <button type="submit" class="wpcf7-submit">Submit</button>
-                </form>
-                <!-- Div to show success/error messages -->
-                <div id="popup-form-response" class="popup-hidden"></div>
+                <!-- Form will be moved here -->
             </div>
         </div>
     </div>`;
 
-    document.body.insertAdjacentHTML('beforeend', formHTML);
+    document.body.insertAdjacentHTML('beforeend', popupShellHTML);
 
-    // 2. Initialize the logic after injection
+    // 2. Locate the specific CF7 form and move it
+    // Strictly target the specific form ID to avoid affecting other forms on the page
+    const cf7Form = document.querySelector('#wpcf7-f1874-o1 .wpcf7-form');
+    const popupContent = document.querySelector('#popup-form-container .popup-content');
+    const formContainer = document.getElementById('popup-form-container');
+
+    if (cf7Form && popupContent) {
+        popupContent.appendChild(cf7Form);
+        // Show the wrapper only after the form is moved (flashing prevention)
+        document.getElementById('custom-popup-wrapper').style.display = 'block';
+    }
+
+    // 3. Initialize the logic after relocation
     const triggerBtn = document.getElementById('form-trigger-btn');
     const closeBtn = document.getElementById('close-popup-btn');
-    const formContainer = document.getElementById('popup-form-container');
-    const form = document.getElementById('my-proprietary-form');
-    const responseDiv = document.getElementById('popup-form-response');
 
     // Toggle visibility
     triggerBtn.addEventListener('click', () => {
@@ -82,49 +60,14 @@ document.addEventListener('DOMContentLoaded', () => {
         formContainer.classList.add('popup-hidden');
     });
 
-    // Handle form submission
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        // Basic UI updates
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const originalBtnText = submitBtn.textContent;
-        submitBtn.textContent = 'Sending...';
-        submitBtn.disabled = true;
-
-        responseDiv.classList.add('popup-hidden');
-        responseDiv.className = ''; // Reset classes
-
-        try {
-            const formData = new FormData(form);
-            
-            const response = await fetch(form.action, {
-                method: 'POST',
-                body: formData
-            });
-
-            if (response.ok) {
-                responseDiv.textContent = 'Thank you! We will contact you soon.';
-                responseDiv.classList.add('success');
-                responseDiv.classList.remove('popup-hidden');
-                form.reset();
-                
-                // Auto close after 3 seconds
-                setTimeout(() => {
-                    formContainer.classList.add('popup-hidden');
-                    responseDiv.classList.add('popup-hidden');
-                }, 3000);
-            } else {
-                throw new Error('Failed to send message');
-            }
-        } catch (error) {
-            responseDiv.textContent = 'Sorry, there was an error sending your message. Please try again.';
-            responseDiv.classList.add('error');
-            responseDiv.classList.remove('popup-hidden');
-            console.error('Form submission error:', error);
-        } finally {
-            submitBtn.textContent = originalBtnText;
-            submitBtn.disabled = false;
+    // 4. Listen for Contact Form 7 native events (strictly for this form)
+    document.addEventListener('wpcf7mailsent', (event) => {
+        // Only trigger auto-close if the submitted form matches our specific ID
+        if (event.detail.contactFormId === '1874') {
+            setTimeout(() => {
+                formContainer.classList.add('popup-hidden');
+            }, 3000);
         }
-    });
+    }, false);
 });
+

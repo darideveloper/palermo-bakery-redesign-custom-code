@@ -38,7 +38,7 @@ jQuery(document).ready(function ($) {
       var $link = $(this);
       var $img = $link.find("img");
 
-      // Attempt to find the high-res source (for the lightbox href)
+      // Attempt to find the image source (from most to least preferred)
       var originalSrc =
         $img.attr("data-original") ||
         $img.attr("data-src") ||
@@ -63,9 +63,17 @@ jQuery(document).ready(function ($) {
         console.log("[Gallery] Processing item:", originalSrc);
       }
 
-      // A. Set high-resolution image for the lightbox (href)
-      if ($link.attr("href") !== originalSrc) {
-        $link.attr("href", originalSrc);
+      // Determine the full-resolution URL for the lightbox:
+      // 1. Prefer data-lightbox-src (set by the PHP filter)
+      // 2. Fall back to stripping -300x300 from data-original
+      // 3. Otherwise use originalSrc as-is
+      var fullResSrc =
+        $img.attr("data-lightbox-src") ||
+        originalSrc.replace(/-300x300(?=\.\w+$)/i, "");
+
+      // A. Set the lightbox href to the full-resolution image
+      if ($link.attr("href") !== fullResSrc) {
+        $link.attr("href", fullResSrc);
         $link.attr("data-rel", "prettyPhoto[cake-gallery]");
         $link.attr("title", $img.attr("alt") || "");
       }
@@ -79,9 +87,10 @@ jQuery(document).ready(function ($) {
 
         console.log("[Gallery] Applying Optimized URL:", thumbnailSrc);
 
-        $img.removeClass("lazy");
-
-        // Sync all data attributes to the thumbnail URL
+        // Only update data-original — let lazyload copy it to src
+        // when the image scrolls into view. Do NOT remove class="lazy"
+        // and do NOT set src directly, as that would defeat the theme's
+        // lazy loading and cause iOS Safari to crash from memory pressure.
         $img.attr("data-original", thumbnailSrc);
         $img.attr("data-src", thumbnailSrc);
         $img.attr("data-lazy-src", thumbnailSrc);
@@ -89,10 +98,6 @@ jQuery(document).ready(function ($) {
 
         $img.removeAttr("srcset");
         $img.attr("data-srcset", "");
-
-        // Set src to thumbnail (the PHP filter already ensures initial HTML has
-        // the thumbnail src, but this catches any missed items or AJAX-loaded content)
-        $img.attr("src", thumbnailSrc);
       }
 
       $link.addClass("link-ready");

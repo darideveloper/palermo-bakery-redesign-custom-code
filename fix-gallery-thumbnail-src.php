@@ -43,11 +43,12 @@ add_action('template_redirect', function () {
                 }
 
                 // Rewrite data-original to the 300x300 thumbnail.
+                // Preserve the original full URL as data-lightbox-src for the lightbox.
                 $old_url = $path . '.' . $ext;
                 $new_url = $path . '-300x300.' . $ext;
                 $new_tag = str_replace(
                     'data-original="' . $old_url . '"',
-                    'data-original="' . $new_url . '"',
+                    'data-original="' . $new_url . '" data-lightbox-src="' . $old_url . '"',
                     $full_tag
                 );
 

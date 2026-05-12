@@ -1,8 +1,5 @@
-# gallery-optimization Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change optimize-gallery-images-resolution. Update Purpose after archive.
-## Requirements
 ### Requirement: Lazy Loader Conflict Prevention
 The script SHALL preserve the theme's `jquery.lazyload.js` functionality by keeping the `lazy` CSS class on gallery images and NOT setting the `src` attribute directly. The script SHALL only update `data-original` (and related data attributes) to point to the 300x300 thumbnail URL, allowing lazyload to copy the thumbnail URL to `src` when the image scrolls into view.
 
@@ -18,6 +15,8 @@ The script SHALL preserve the theme's `jquery.lazyload.js` functionality by keep
 - **When** the user scrolls the image into the viewport
 - **Then** the theme's lazyload SHALL copy `data-original` to `src`
 - **And** the browser SHALL load the 300x300 thumbnail
+
+## ADDED Requirements
 
 ### Requirement: Lightbox Uses Full-Resolution Image
 The gallery script SHALL open the prettyPhoto lightbox with the full-resolution version of the image, not the 300x300 thumbnail.
@@ -43,4 +42,3 @@ The gallery page SHALL load images lazily so that iOS Safari's memory limit is n
 - **Then** only the initially visible images SHALL begin downloading
 - **And** off-screen images SHALL NOT start downloading
 - **And** the page SHALL NOT crash due to memory pressure
-

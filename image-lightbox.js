@@ -12,12 +12,11 @@ jQuery(document).ready(function ($) {
     console.log("--- Gallery Refresh: Processing Items ---");
 
     var $container = $("#sns_woo_list");
-    // Target only elements NOT yet processed
     var $productCards = $(".block-product-inner:not(.gallery-ready)");
 
     if ($productCards.length === 0) {
-       console.log("No new items to process.");
-       return;
+      console.log("No new items to process.");
+      return;
     }
 
     // 0. FIX ALT ATTRIBUTES (Sync title with image alt)
@@ -25,7 +24,7 @@ jQuery(document).ready(function ($) {
       var $card = $(this);
       var $titleLink = $card.find(".item-title a");
       var actualName = $titleLink.text().trim();
-      
+
       if (actualName) {
         $card.find(".product-image img").attr("alt", actualName);
       }
@@ -38,58 +37,62 @@ jQuery(document).ready(function ($) {
     $galleryLinks.each(function () {
       var $link = $(this);
       var $img = $link.find("img");
-      
-      // Attempt to find the high-res source
-      var originalSrc = $img.attr("data-original") || 
-                        $img.attr("data-src") || 
-                        $img.attr("data-lazy-src") || 
-                        $img.attr("src");
+
+      // Attempt to find the high-res source (for the lightbox href)
+      var originalSrc =
+        $img.attr("data-original") ||
+        $img.attr("data-src") ||
+        $img.attr("data-lazy-src") ||
+        $img.attr("src");
 
       if (!originalSrc) return;
 
-      // SELF-HEALING: If the image is "ready" but the URL is NOT optimized, something reverted it.
       var isReady = $link.hasClass("link-ready");
       var isOptimized = originalSrc.includes("-300x300");
 
       if (isReady && isOptimized) {
-         // Everything is fine, skip
-         return;
+        return;
       }
 
       if (isReady && !isOptimized) {
-         console.warn("[Gallery] Warning: Item was reverted to high-res! Re-fixing...", originalSrc);
+        console.warn(
+          "[Gallery] Warning: Item was reverted to high-res! Re-fixing...",
+          originalSrc,
+        );
       } else {
-         console.log("[Gallery] Processing item:", originalSrc);
+        console.log("[Gallery] Processing item:", originalSrc);
       }
 
       // A. Set high-resolution image for the lightbox (href)
-      // This should only happen if not already set or if we need to sync
       if ($link.attr("href") !== originalSrc) {
         $link.attr("href", originalSrc);
         $link.attr("data-rel", "prettyPhoto[cake-gallery]");
         $link.attr("title", $img.attr("alt") || "");
       }
 
-      // B. Transform the grid preview to 300x300 thumbnail
+      // B. Ensure the grid preview uses 300x300 thumbnail
       if (!isOptimized) {
-        var thumbnailSrc = originalSrc
-          .replace(/(.*)(\.(?:jpg|jpeg|png|webp))$/i, "$1-300x300$2");
-        
+        var thumbnailSrc = originalSrc.replace(
+          /(.*)(\.(?:jpg|jpeg|png|webp))$/i,
+          "$1-300x300$2",
+        );
+
         console.log("[Gallery] Applying Optimized URL:", thumbnailSrc);
 
-        // Remove the lazy class FIRST so the theme's jquery.lazyload.js
-        // won't react to the subsequent src/attribute changes
         $img.removeClass("lazy");
-        
-        // AGGRESSIVE OVERWRITE: Target all common lazy load attributes
-        $img.attr("src", thumbnailSrc);
+
+        // Sync all data attributes to the thumbnail URL
         $img.attr("data-original", thumbnailSrc);
         $img.attr("data-src", thumbnailSrc);
         $img.attr("data-lazy-src", thumbnailSrc);
-        
-        // Remove srcset to force the browser to use our 300x300 version
+        $img.attr("data-gallery-processed", "true");
+
         $img.removeAttr("srcset");
         $img.attr("data-srcset", "");
+
+        // Set src to thumbnail (the PHP filter already ensures initial HTML has
+        // the thumbnail src, but this catches any missed items or AJAX-loaded content)
+        $img.attr("src", thumbnailSrc);
       }
 
       $link.addClass("link-ready");
@@ -97,7 +100,6 @@ jQuery(document).ready(function ($) {
 
     // 2. INITIALIZE / RE-BIND PRETTYPHOTO
     if ($.fn.prettyPhoto) {
-      // Re-initialize prettyPhoto for all links to ensure the new ones are included in the collection
       $("a[data-rel^='prettyPhoto']").unbind("click.prettyphoto");
 
       $("a[data-rel^='prettyPhoto']").prettyPhoto({
@@ -110,12 +112,9 @@ jQuery(document).ready(function ($) {
         allow_resize: true,
         default_width: 900,
         default_height: 600,
-
-        // FIX 1: Turn off the thumbnail gallery at the bottom
         overlay_gallery: false,
 
         changepicturecallback: function () {
-          // Extra safety: force height adjustment on every image change
           var viewportHeight = $(window).height();
           $(".pp_content_container").css(
             "max-height",
@@ -132,14 +131,13 @@ jQuery(document).ready(function ($) {
    */
   function refreshGalleryDebounced() {
     clearTimeout(galleryTimeout);
-    galleryTimeout = setTimeout(function() {
+    galleryTimeout = setTimeout(function () {
       initCakeGallery();
-    }, 250); // Increased delay for better stability on mobile
+    }, 250);
   }
 
   // --- EXECUTION ---
 
-  // Run on initial page load
   initCakeGallery();
 
   // Listen for common Infinite Scroll events
@@ -154,8 +152,7 @@ jQuery(document).ready(function ($) {
   var target = document.querySelector("#sns_woo_list");
   if (target) {
     var observer = new MutationObserver(function (mutations) {
-      // Check if any nodes were actually added to avoid useless triggers
-      var nodesAdded = mutations.some(function(m) {
+      var nodesAdded = mutations.some(function (m) {
         return m.addedNodes.length > 0;
       });
 

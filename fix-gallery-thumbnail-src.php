@@ -1,24 +1,5 @@
 <?php
 
-// Place this code in your theme's functions.php or use a "Code Snippets" plugin.
-
-/**
- * FIX: Serve 300x300 thumbnails in the gallery grid instead of full-resolution images.
- *
- * The theme's product images use src="prod_loading.gif" as a placeholder and
- * store the actual URL in data-original. When the page loads, the theme's
- * JavaScript moves data-original to src, causing the browser to load the
- * full-resolution image.
- *
- * This fix rewrites data-original to the -300x300 thumbnail URL before the
- * HTML is sent to the browser. When the theme's JS later swaps data-original
- * into src, the browser loads the small thumbnail instead of the massive
- * full-res image.
- *
- * Only images with the "attachment-shop_catalog" class are modified —
- * site logos and other uploads are left untouched.
- */
-
 // ---------------------------------------------------------------------------
 // 1. Ensure the WooCommerce catalog thumbnail size is 300x300.
 // ---------------------------------------------------------------------------

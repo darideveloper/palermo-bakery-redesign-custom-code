@@ -1,4 +1,10 @@
 jQuery(document).ready(function ($) {
+  // --- 1. SCRIPT GUARD ---
+  if (window.cakeGalleryScriptLoaded) return;
+  window.cakeGalleryScriptLoaded = true;
+
+  var galleryTimeout;
+
   /**
    * CORE FUNCTION: PREPARE AND BIND GALLERY
    */
@@ -6,19 +12,28 @@ jQuery(document).ready(function ($) {
     console.log("--- Gallery Refresh: Processing Items ---");
 
     var $container = $("#sns_woo_list");
-    var $productCards = $(".block-product-inner");
+    // Target only elements NOT yet processed
+    var $productCards = $(".block-product-inner:not(.gallery-ready)");
+
+    if ($productCards.length === 0) {
+       console.log("No new items to process.");
+       return;
+    }
 
     // 0. FIX ALT ATTRIBUTES (Sync title with image alt)
     $productCards.each(function () {
       var $card = $(this);
-      var actualName = $card.find(".item-title a").text().trim();
+      var $titleLink = $card.find(".item-title a");
+      var actualName = $titleLink.text().trim();
+      
       if (actualName) {
         $card.find(".product-image img").attr("alt", actualName);
       }
+      $card.addClass("gallery-ready");
     });
 
     // 1. PREPARE LINKS FOR PRETTYPHOTO
-    var $galleryLinks = $container.find(".grid-view .product-image");
+    var $galleryLinks = $container.find(".grid-view .product-image:not(.link-ready)");
 
     $galleryLinks.each(function () {
       var $link = $(this);
@@ -29,12 +44,13 @@ jQuery(document).ready(function ($) {
         $link.attr("href", highResImage);
         $link.attr("data-rel", "prettyPhoto[cake-gallery]");
         $link.attr("title", $img.attr("alt") || "");
+        $link.addClass("link-ready");
       }
     });
 
     // 2. INITIALIZE / RE-BIND PRETTYPHOTO
     if ($.fn.prettyPhoto) {
-      // Unbind previous clicks to prevent double-triggering
+      // Re-initialize prettyPhoto for all links to ensure the new ones are included in the collection
       $("a[data-rel^='prettyPhoto']").unbind("click.prettyphoto");
 
       $("a[data-rel^='prettyPhoto']").prettyPhoto({
@@ -64,6 +80,16 @@ jQuery(document).ready(function ($) {
     }
   }
 
+  /**
+   * DEBOUNCED REFRESH
+   */
+  function refreshGalleryDebounced() {
+    clearTimeout(galleryTimeout);
+    galleryTimeout = setTimeout(function() {
+      initCakeGallery();
+    }, 250); // Increased delay for better stability on mobile
+  }
+
   // --- EXECUTION ---
 
   // Run on initial page load
@@ -73,7 +99,7 @@ jQuery(document).ready(function ($) {
   $(document).on(
     "yith_infs_added_elem append.infiniteScroll post-load",
     function () {
-      initCakeGallery();
+      refreshGalleryDebounced();
     },
   );
 
@@ -81,11 +107,16 @@ jQuery(document).ready(function ($) {
   var target = document.querySelector("#sns_woo_list");
   if (target) {
     var observer = new MutationObserver(function (mutations) {
-      // Small timeout to ensure elements are fully rendered
-      setTimeout(function () {
-        initCakeGallery();
-      }, 100);
+      // Check if any nodes were actually added to avoid useless triggers
+      var nodesAdded = mutations.some(function(m) {
+        return m.addedNodes.length > 0;
+      });
+
+      if (nodesAdded) {
+        refreshGalleryDebounced();
+      }
     });
+
     observer.observe(target, { childList: true, subtree: true });
   }
 });

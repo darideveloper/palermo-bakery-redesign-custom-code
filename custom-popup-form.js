@@ -1,4 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- SCRIPT GUARD ---
+    if (window.customPopupFormLoaded) return;
+    window.customPopupFormLoaded = true;
+
     // 1. Inject the Popup Shell (Wrapper and Button) into the body
     const popupShellHTML = `
     <div id="custom-popup-wrapper">

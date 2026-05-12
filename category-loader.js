@@ -1,7 +1,14 @@
 jQuery(document).ready(function ($) {
+  // --- SCRIPT GUARD ---
+  if (window.customCategoryLoaderLoaded) return;
+  window.customCategoryLoaderLoaded = true;
+
   // 1. Build the HTML for the loader and add it to the bottom of the page
   var loaderHTML = '<div id="custom-category-loader"><div class="custom-spinner"></div></div>'
-  $('body').append(loaderHTML)
+  
+  if ($('#custom-category-loader').length === 0) {
+    $('body').append(loaderHTML)
+  }
 
   // 2. Listen for clicks on the category pill buttons
   $('#woocommerce_product_categories-3 ul.product-categories li a').on('click', function (e) {
@@ -13,6 +20,11 @@ jQuery(document).ready(function ($) {
 
     // Turn on the loading screen!
     $('#custom-category-loader').addClass('is-loading')
+
+    // Safety timeout: if the next page doesn't load within 10 seconds, hide the spinner
+    setTimeout(function() {
+      $('#custom-category-loader').removeClass('is-loading')
+    }, 10000)
   })
 
   // 3. Safety fallback: If the user hits the browser's "Back" button, hide the spinner

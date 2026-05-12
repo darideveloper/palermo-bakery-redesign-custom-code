@@ -1,0 +1,129 @@
+/* =========================================
+   1. FAVORITES PAGE LAYOUT ALIGNMENT (PAGE ID 12)
+   ========================================= */
+/* Hide the Sidebar */
+.page-id-12 .sns-left {
+    display: none !important;
+}
+
+/* Expand Main Content to Full Width */
+.page-id-12 .sns-main {
+    width: 100% !important;
+    padding: 0 !important;
+}
+
+/* Center Title Alignment */
+.page-id-12 h1.page-header {
+    text-align: center !important;
+    margin-bottom: 40px !important;
+    border: none !important;
+}
+.page-id-12 h1.page-header span {
+    display: inline-block;
+}
+
+/* =========================================
+   2. CAKE MASONRY GALLERY GRID
+   ========================================= */
+.cake-masonry-grid {
+    column-count: 3;
+    column-gap: 20px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 991px) {
+    .cake-masonry-grid { column-count: 2; }
+}
+@media (max-width: 575px) {
+    .cake-masonry-grid { column-count: 1; }
+}
+
+/* Individual Gallery Cards */
+.masonry-item {
+    break-inside: avoid;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.masonry-item img {
+    width: 100%;
+    height: auto;
+    display: block;
+    transition: transform 0.5s ease;
+}
+
+.masonry-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+.masonry-item:hover img {
+    transform: scale(1.03);
+}
+
+.masonry-label {
+    padding: 15px;
+    text-align: center;
+    font-weight: 600;
+    color: #333;
+    background: #fff;
+}
+
+/* =========================================
+   CUSTOM HEART BUTTON (LOVE BUTTON)
+   ========================================= */
+
+/* 1. Hide the default YITH button globally */
+.yith-wcwl-add-to-wishlist {
+    display: none !important;
+}
+
+/* 2. Position the custom heart over the product image */
+.product-inner .item-img-info {
+    position: relative;
+}
+
+.my-custom-fav-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 99;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.my-custom-fav-btn:hover {
+    transform: scale(1.15);
+    background: #ffffff;
+}
+
+/* Ensure the red heart scales properly when active */
+.my-custom-fav-btn.is-favorited {
+    animation: heartPop 0.3s ease;
+}
+
+@keyframes heartPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+
+.my-custom-fav-btn:focus {
+    outline: none;
+}

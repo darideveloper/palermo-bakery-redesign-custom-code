@@ -6,7 +6,7 @@
  * - Targets specific elements instead of all images
  */
 
-(function () {
+(function ($) {
   if (window.myAosScriptLoaded) return;
   window.myAosScriptLoaded = true;
 
@@ -52,7 +52,9 @@
   window.addEventListener('load', initAnimations);
 
   // Listen for Infinite Scroll events to apply AOS to new items
-  $(document).on('yith_infs_added_elem append.infiniteScroll post-load', function() {
-    initAnimations();
-  });
-})();
+  if (typeof $ !== 'undefined') {
+    $(document).on('yith_infs_added_elem append.infiniteScroll post-load', function() {
+      initAnimations();
+    });
+  }
+})(jQuery);

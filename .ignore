@@ -1,0 +1,7 @@
+
+# .gitignore
+# Ignore proposals
+!openspec/changes/*
+
+# skip docs
+!docs/

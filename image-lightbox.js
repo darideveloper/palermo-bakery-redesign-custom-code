@@ -32,20 +32,67 @@ jQuery(document).ready(function ($) {
       $card.addClass("gallery-ready");
     });
 
-    // 1. PREPARE LINKS FOR PRETTYPHOTO
-    var $galleryLinks = $container.find(".grid-view .product-image:not(.link-ready)");
+    // 1. PREPARE LINKS AND OPTIMIZE PREVIEW IMAGES
+    var $galleryLinks = $container.find(".grid-view .product-image");
 
     $galleryLinks.each(function () {
       var $link = $(this);
       var $img = $link.find("img");
-      var highResImage = $img.attr("data-original") || $img.attr("src");
+      
+      // Attempt to find the high-res source
+      var originalSrc = $img.attr("data-original") || 
+                        $img.attr("data-src") || 
+                        $img.attr("data-lazy-src") || 
+                        $img.attr("src");
 
-      if (highResImage) {
-        $link.attr("href", highResImage);
+      if (!originalSrc) return;
+
+      // SELF-HEALING: If the image is "ready" but the URL is NOT optimized, something reverted it.
+      var isReady = $link.hasClass("link-ready");
+      var isOptimized = originalSrc.includes("-300x300");
+
+      if (isReady && isOptimized) {
+         // Everything is fine, skip
+         return;
+      }
+
+      if (isReady && !isOptimized) {
+         console.warn("[Gallery] Warning: Item was reverted to high-res! Re-fixing...", originalSrc);
+      } else {
+         console.log("[Gallery] Processing item:", originalSrc);
+      }
+
+      // A. Set high-resolution image for the lightbox (href)
+      // This should only happen if not already set or if we need to sync
+      if ($link.attr("href") !== originalSrc) {
+        $link.attr("href", originalSrc);
         $link.attr("data-rel", "prettyPhoto[cake-gallery]");
         $link.attr("title", $img.attr("alt") || "");
-        $link.addClass("link-ready");
       }
+
+      // B. Transform the grid preview to 300x300 thumbnail
+      if (!isOptimized) {
+        var thumbnailSrc = originalSrc
+          .replace(/(.*)(\.(?:jpg|jpeg|png|webp))$/i, "$1-300x300$2");
+        
+        console.log("[Gallery] Applying Optimized URL:", thumbnailSrc);
+
+        // Remove the lazy class FIRST so the theme's jquery.lazyload.js
+        // won't react to the subsequent src/attribute changes
+        $img.removeClass("lazy");
+        
+        // AGGRESSIVE OVERWRITE: Target all common lazy load attributes
+        $img.attr("src", thumbnailSrc);
+        $img.attr("data-original", thumbnailSrc);
+        $img.attr("data-src", thumbnailSrc);
+        $img.attr("data-lazy-src", thumbnailSrc);
+        
+        // Remove srcset to force the browser to use our 300x300 version
+        $img.removeAttr("srcset");
+        $img.attr("data-srcset", "");
+      }
+
+      $link.addClass("link-ready");
     });
 
     // 2. INITIALIZE / RE-BIND PRETTYPHOTO

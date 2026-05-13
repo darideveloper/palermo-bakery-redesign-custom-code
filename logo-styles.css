@@ -1,0 +1,9 @@
+/* =========================================
+   FILE: LOGO STYLES
+   ========================================= */
+
+@media (max-width: 767px) {
+    body.header-style4 #sns_header .main-header .header-logo img {
+        max-height: none !important;
+    }
+}

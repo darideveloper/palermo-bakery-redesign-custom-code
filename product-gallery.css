@@ -65,7 +65,7 @@
     div.pp_content_container .pp_right,
     .pp_hoverContainer {
         width: 100% !important;
-        height: auto !important;
+        height: 100% !important;
     }
 
     #pp_full_res > img {

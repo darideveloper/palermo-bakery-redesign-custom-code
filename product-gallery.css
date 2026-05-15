@@ -65,7 +65,7 @@
     div.pp_content_container .pp_right,
     .pp_hoverContainer {
         width: 100% !important;
-        height: auto !important;
+        height: 100% !important;
     }
 
     #pp_full_res > img {
@@ -148,4 +148,127 @@
 /* remove extra icon in header */
 .main-header .btn2.btn-navbar.leftsidebar {
     display: none !important;
+}
+/* New code */
+
+/* =========================================
+   PRETTYPHOTO LIGHTBOX BUTTON RESTORATION
+   ========================================= */
+
+/* 1. Reset broken default image sprites and text-indents */
+div.pp_default .pp_next,
+div.pp_default .pp_previous,
+div.pp_default .pp_close {
+    text-indent: 0 !important;
+    font-size: 0 !important;
+    background-image: none !important;
+}
+
+/* 2. Configure Hit Areas */
+.pp_hoverContainer {
+    z-index: 10000 !important;
+    width: 100% !important; /* Force adherence to image width */
+    left: 0 !important;
+}
+div.pp_default .pp_next,
+div.pp_default .pp_previous {
+    position: absolute;
+    height: 100%;
+    width: 50%;
+    top: 0;
+    margin: 0;
+    z-index: 10005 !important;
+}
+div.pp_default .pp_next {
+    right: 0;
+}
+div.pp_default .pp_previous {
+    left: 0;
+}
+
+/* 3. Draw New UI Elements (Arrows) */
+div.pp_default .pp_next::after,
+div.pp_default .pp_previous::after {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background-color: rgba(0, 0, 0, 0.4);
+    color: #ffffff;
+    font-size: 20px;
+    border-radius: 50%;
+    opacity: 0.6;
+    transition:
+        opacity 0.3s ease,
+        background-color 0.3s ease;
+}
+div.pp_default .pp_next:hover::after,
+div.pp_default .pp_previous:hover::after {
+    opacity: 1;
+    background-color: rgba(0, 0, 0, 0.9);
+}
+div.pp_default .pp_next::after {
+    content: "\276F";
+    right: 20px; /* Aligns symmetrically inside the image edge */
+}
+div.pp_default .pp_previous::after {
+    content: "\276E";
+    left: 25px; /* Aligns symmetrically inside the image edge */
+}
+
+/* 4. Draw New Close Button (Desktop Edge) */
+div.pp_default .pp_close {
+    position: absolute !important;
+    top: 5px !important; /* Pushes out to the top boundary */
+    right: 15px !important; /* Pushes out to the right boundary */
+    width: 32px !important;
+    height: 32px !important;
+    background-color: rgba(0, 0, 0, 0.6) !important;
+    border-radius: 50%;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    z-index: 10010 !important;
+    transition: background-color 0.3s ease;
+}
+div.pp_default .pp_close:hover {
+    background-color: rgba(217, 48, 37, 0.9) !important;
+}
+div.pp_default .pp_close::after {
+    content: "\00d7";
+    color: #ffffff;
+    font-size: 22px;
+    line-height: 1;
+}
+
+/* 5. Mobile Structural Fallbacks & Alignment */
+@media (max-width: 767px) {
+    div.pp_pic_holder {
+        width: 100% !important;
+        left: 0 !important;
+        padding: 0 10px !important; /* Creates gutter so close button isn't cut off */
+        box-sizing: border-box;
+    }
+    div.pp_content_container,
+    div.pp_content,
+    .pp_hoverContainer {
+        width: 100% !important;
+        height: auto !important;
+    }
+    #pp_full_res > img {
+        width: 100% !important;
+        height: auto !important;
+        object-fit: contain;
+    }
+    div.pp_default .pp_close {
+        top: 0 !important; /* Flushes to the inner container edge on mobile */
+        right: 10px !important;
+    }
+    a.pp_expand {
+        display: none !important;
+    }
 }

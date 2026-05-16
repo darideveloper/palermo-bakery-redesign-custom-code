@@ -48,12 +48,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (str.includes('3PindotsIvoryWeddingCake') || str.includes('WPindots')) {
           if (newColor === 'White') {
             return str.replace(/3PindotsIvoryWeddingCake/g, 'WPindots')
-                      .replace(/\.jpg/g, '.png')
+              .replace(/\.jpg/g, '.png')
           } else if (newColor === 'Ivory') {
             // Replace WPindotsWhite first, then WPindots, to avoid partial matches
             return str.replace(/WPindotsWhite/g, '3PindotsIvoryWeddingCake')
-                      .replace(/WPindots/g, '3PindotsIvoryWeddingCake')
-                      .replace(/\.png/g, '.jpg')
+              .replace(/WPindots/g, '3PindotsIvoryWeddingCake')
+              .replace(/\.png/g, '.jpg')
           }
         }
 

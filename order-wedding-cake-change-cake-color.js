@@ -42,17 +42,26 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
+        // Special exception for the Pindots cake:
+        // Ivory version: 3PindotsIvoryWeddingCake
+        // White version: WPindots
+        if (str.includes('3PindotsIvoryWeddingCake') || str.includes('WPindots')) {
+          if (newColor === 'White') {
+            return str.replace(/3PindotsIvoryWeddingCake/g, 'WPindots')
+          } else if (newColor === 'Ivory') {
+            return str.replace(/WPindots/g, '3PindotsIvoryWeddingCake')
+          }
+        }
+
         if (!str.includes(oldColor)) return str
         return str.replace(oldColorRegex, newColor)
       }
 
-      if (img.src && img.src.includes(oldColor)) {
-        console.log(`is ${oldColor.toLowerCase()} in src`)
+      if (img.src) {
         img.src = replaceColor(img.src)
       }
 
-      if (img.srcset && img.srcset.includes(oldColor)) {
-        console.log(`is ${oldColor.toLowerCase()} in srcset`)
+      if (img.srcset) {
         img.srcset = replaceColor(img.srcset)
       }
     })

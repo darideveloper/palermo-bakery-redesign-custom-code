@@ -44,12 +44,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Special exception for the Pindots cake:
         // Ivory version: 3PindotsIvoryWeddingCake
-        // White version: WPindots
+        // White version: WPindots or WPindotsWhite
         if (str.includes('3PindotsIvoryWeddingCake') || str.includes('WPindots')) {
           if (newColor === 'White') {
             return str.replace(/3PindotsIvoryWeddingCake/g, 'WPindots')
           } else if (newColor === 'Ivory') {
-            return str.replace(/WPindots/g, '3PindotsIvoryWeddingCake')
+            // Replace WPindotsWhite first, then WPindots, to avoid partial matches
+            return str.replace(/WPindotsWhite/g, '3PindotsIvoryWeddingCake')
+                      .replace(/WPindots/g, '3PindotsIvoryWeddingCake')
           }
         }
 
@@ -86,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('is checked')
         // Make them exclusive like radio buttons
         otherCheckbox.checked = false
-        
+
         // Update images
         updateImagesColor(oldColor, newColor)
       }

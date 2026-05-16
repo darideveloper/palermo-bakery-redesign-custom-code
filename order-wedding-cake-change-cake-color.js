@@ -31,6 +31,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const replaceColor = (str) => {
         if (!str) return str
 
+        // Always use the full image size (no variants) by removing dimension suffixes like -600x600
+        str = str.replace(/-\d+x\d+(?=\.(jpg|jpeg|png|webp|gif))/gi, '')
+
         // Special exception for the Rustic/White Stucco cake which has "Ivory" in both filenames:
         // Ivory version: 5RusticStuccoIvoryWeddingCake
         // White version: 5WhiteStuccoIvoryWeddingCake

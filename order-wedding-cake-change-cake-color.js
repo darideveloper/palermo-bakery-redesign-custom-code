@@ -53,6 +53,17 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
+        // Special exception for the Screen-Shot cake:
+        // Ivory version: Screen-Shot-2022-07-11-at-10.58.40-PM
+        // White version: Screen-Shot-2022-07-11-at-10.58.32-PM
+        if (str.includes('Screen-Shot-2022-07-11-at-10.58.40-PM') || str.includes('Screen-Shot-2022-07-11-at-10.58.32-PM')) {
+          if (newColor === 'White') {
+            return str.replace(/Screen-Shot-2022-07-11-at-10.58.40-PM/g, 'Screen-Shot-2022-07-11-at-10.58.32-PM')
+          } else if (newColor === 'Ivory') {
+            return str.replace(/Screen-Shot-2022-07-11-at-10.58.32-PM/g, 'Screen-Shot-2022-07-11-at-10.58.40-PM')
+          }
+        }
+
         if (!str.includes(oldColor)) return str
         return str.replace(oldColorRegex, newColor)
       }

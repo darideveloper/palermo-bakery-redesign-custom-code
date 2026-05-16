@@ -29,13 +29,21 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const replaceColor = (str) => {
-        if (!str || !str.includes(oldColor)) return str
-        
-        // Temporarily map 5WhiteStucco to evade replacement, swap colors, then restore
-        return str
-          .replace(/5WhiteStucco/g, '__5WS__')
-          .replace(oldColorRegex, newColor)
-          .replace(/__5WS__/g, '5WhiteStucco')
+        if (!str) return str
+
+        // Special exception for the Rustic/White Stucco cake which has "Ivory" in both filenames:
+        // Ivory version: 5RusticStuccoIvoryWeddingCake
+        // White version: 5WhiteStuccoIvoryWeddingCake
+        if (str.includes('5RusticStuccoIvoryWeddingCake') || str.includes('5WhiteStuccoIvoryWeddingCake')) {
+          if (newColor === 'White') {
+            return str.replace(/5RusticStuccoIvoryWeddingCake/g, '5WhiteStuccoIvoryWeddingCake')
+          } else if (newColor === 'Ivory') {
+            return str.replace(/5WhiteStuccoIvoryWeddingCake/g, '5RusticStuccoIvoryWeddingCake')
+          }
+        }
+
+        if (!str.includes(oldColor)) return str
+        return str.replace(oldColorRegex, newColor)
       }
 
       if (img.src && img.src.includes(oldColor)) {

@@ -103,4 +103,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // 4 & 5. Attach event listeners
   handleColorChange(whiteCheckbox, ivoryCheckbox, 'Ivory', 'White')
   handleColorChange(ivoryCheckbox, whiteCheckbox, 'White', 'Ivory')
+
+  // 6. Set White as default when page loads
+  whiteCheckbox.checked = true
+  whiteCheckbox.dispatchEvent(new Event('change'))
 })

@@ -258,7 +258,7 @@ div.pp_default .pp_close::after {
     div.pp_content,
     .pp_hoverContainer {
         width: 100% !important;
-        height: auto !important;
+        height: 100% !important;
     }
     #pp_full_res > img {
         width: 100% !important;
@@ -266,8 +266,8 @@ div.pp_default .pp_close::after {
         object-fit: contain;
     }
     div.pp_default .pp_close {
-        top: 0 !important; /* Flushes to the inner container edge on mobile */
-        right: 10px !important;
+        top: 5px !important; /* Flushes to the inner container edge on mobile */
+        right: 25px !important;
     }
     a.pp_expand {
         display: none !important;

@@ -1,8 +1,5 @@
-# gallery-optimization Specification
+## MODIFIED Requirements
 
-## Purpose
-This specification defines the optimization strategy for the high-volume product gallery. The primary goals are to prevent memory crashes on iOS Safari, ensure consistent lazy-loading using native browser capabilities, protect image URLs from rogue rewriting scripts using sentinels, and improve performance by removing non-essential third-party scripts on gallery views.
-## Requirements
 ### Requirement: Lazy Loader Conflict Prevention
 
 The gallery SHALL use the browser's native `loading="lazy"` attribute for image deferral and SHALL strip the `lazy` CSS class so the theme's `jquery.lazyload.js` scroll-event handler ignores gallery images entirely. The PHP output buffer SHALL be the primary authority that determines each img's `src`, `data-original`, `data-lightbox-src`, `loading`, `decoding`, `class`, and `srcset` attributes. Client-side JavaScript SHALL only re-assign `src` defensively — when the current value indicates the PHP transform did not apply (loading spinner GIF still present, or thumbnail sentinel `?t=300` missing). In the normal PHP-buffered case those defensive branches SHALL be no-ops.
@@ -154,4 +151,3 @@ The theme SHALL expose a single helper function `_palermo_is_gallery_view()` tha
 - **When** the predicate is evaluated
 - **Then** it SHALL return `false`
 - **And** none of the gallery-only customizations SHALL apply
-

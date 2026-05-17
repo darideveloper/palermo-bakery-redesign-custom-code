@@ -1213,43 +1213,105 @@ add_action('template_redirect', function () {
             return $buffer;
         }
 
+        // Remove the rogue `stripSuffix` script that's inlined by the
+        // "Simple Custom CSS and JS" plugin. Even with our sentinel query
+        // string defeating its regex, its `img.src = img.src` reassignment
+        // bypasses native loading="lazy" and forces re-fetches every 450ms.
+        // It also runs a MutationObserver on the entire documentElement,
+        // pegging the iOS Safari main thread. Strip it at the HTML level so
+        // it never reaches the browser.
+        // Match by the rogue script's actual function declaration, NOT by
+        // a substring like "stripSuffix" — our own gallery script comments
+        // mention that name and would otherwise be removed too.
+        $buffer = preg_replace_callback(
+            '/<script[^>]*>[\s\S]*?<\/script>/i',
+            function ($s) {
+                if (strpos($s[0], 'const stripSuffix') !== false
+                    || strpos($s[0], 'const updateImagesAndHide') !== false) {
+                    return '<!-- rogue stripSuffix script removed -->';
+                }
+                return $s[0];
+            },
+            $buffer
+        );
+
+        // A "Simple Custom CSS and JS" entry in WP admin runs every 450ms
+        // and strips `-\d+x\d+` from any img src/data-original whose URL
+        // ENDS in .jpg/.png/.webp. Appending this sentinel query string
+        // breaks the regex's end-of-string anchor — the rogue script becomes
+        // a no-op on our gallery images, while the image still fetches the
+        // same file (WordPress ignores unknown query params).
+        $thumb_sentinel = '?t=300';
+
         // Match <img> with "shop_catalog" in class AND data-original
         // pointing to /uploads/. Handles attributes in any order.
         $buffer = preg_replace_callback(
-            '/<img\s(?=[^>]*class="[^"]*shop_catalog[^"]*")[^>]*data-original="([^"]*?\/uploads\/[^"]*?)\.(jpg|jpeg|png|webp)"[^>]*>/i',
-            function ($m) {
+            '/<img\s(?=[^>]*class="[^"]*shop_catalog[^"]*")[^>]*data-original="([^"]*?\/uploads\/[^"]*?)\.(jpg|jpeg|png|webp)(?:\?[^"]*)?"[^>]*>/i',
+            function ($m) use ($thumb_sentinel) {
                 $path      = $m[1];
                 $ext       = $m[2];
                 $full_tag  = $m[0];
 
-                if (strpos($path, '-300x300') !== false) {
-                    return $full_tag;
+                $is_optimized = (strpos($path, '-300x300') !== false);
+                $thumb_base   = ($is_optimized ? $path : $path . '-300x300') . '.' . $ext;
+                $full_base    = preg_replace('/-300x300$/', '', $path) . '.' . $ext;
+                $thumb_url    = $thumb_base . $thumb_sentinel;
+
+                // 1) data-original → thumbnail (with sentinel)
+                //    data-lightbox-src → full-size (lightbox click target,
+                //    leave untouched by rogue regex by using ?l=1).
+                $full_tag = preg_replace(
+                    '/\sdata-original="[^"]*"/i',
+                    ' data-original="' . $thumb_url . '"',
+                    $full_tag,
+                    1
+                );
+                if (strpos($full_tag, 'data-lightbox-src=') === false) {
+                    $full_tag = preg_replace(
+                        '/<img\s/i',
+                        '<img data-lightbox-src="' . $full_base . '?l=1" ',
+                        $full_tag,
+                        1
+                    );
+                } else {
+                    $full_tag = preg_replace(
+                        '/\sdata-lightbox-src="[^"]*"/i',
+                        ' data-lightbox-src="' . $full_base . '?l=1"',
+                        $full_tag,
+                        1
+                    );
                 }
 
-                // Rewrite data-original to the 300x300 thumbnail.
-                // Preserve the original full URL as data-lightbox-src for the lightbox.
-                $old_url = $path . '.' . $ext;
-                $new_url = $path . '-300x300.' . $ext;
-                $new_tag = str_replace(
-                    'data-original="' . $old_url . '"',
-                    'data-original="' . $new_url . '" data-lightbox-src="' . $old_url . '"',
+                // 2) Rewrite src to the thumbnail-with-sentinel, regardless
+                //    of whether it was the spinner GIF or already an upload.
+                //    300+ animated prod_loading.gif decodes is the iOS freeze
+                //    source; sentinel defeats the rogue stripSuffix loop.
+                $full_tag = preg_replace(
+                    '/\ssrc="[^"]*"/i',
+                    ' src="' . $thumb_url . '"',
+                    $full_tag,
+                    1
+                );
+
+                // 3) Add native lazy-loading + async decode, and remove the
+                //    `lazy` class so jquery.lazyload (a scroll-event lib)
+                //    doesn't track these images. Together these eliminate
+                //    the per-scroll iteration over hundreds of <img>s that
+                //    pegged the iOS main thread.
+                if (strpos($full_tag, ' loading=') === false) {
+                    $full_tag = preg_replace('/<img\s/i', '<img loading="lazy" decoding="async" ', $full_tag, 1);
+                }
+                $full_tag = preg_replace(
+                    '/class="([^"]*?)\blazy\b\s*([^"]*)"/i',
+                    'class="$1$2"',
                     $full_tag
                 );
 
-                // Also rewrite src if it happens to point at an upload
-                // (some themes put the real URL in both).
-                $new_tag = preg_replace_callback(
-                    '/src="([^"]*?\/uploads\/[^"]*?)\.(jpg|jpeg|png|webp)"/i',
-                    function ($s) {
-                        if (strpos($s[1], '-300x300') !== false) {
-                            return $s[0];
-                        }
-                        return 'src="' . $s[1] . '-300x300.' . $s[2] . '"';
-                    },
-                    $new_tag
-                );
+                // Drop any srcset — we already chose the 300x300 thumbnail
+                // deliberately; srcset would re-upgrade to the full-size file.
+                $full_tag = preg_replace('/\ssrcset="[^"]*"/i', '', $full_tag);
 
-                return $new_tag;
+                return $full_tag;
             },
             $buffer
         );
@@ -1260,6 +1322,57 @@ add_action('template_redirect', function () {
 
 
 // =============== END section is for optimize gallery images ============
+
+
+// =============== START: stop iOS Safari spinner / tab-kill on cake-gallery ===
+// The browser's `load` event never fires because of slow third-party
+// subresources (WooCommerce cart-fragments XHR, Google reCAPTCHA,
+// WordPress emoji SVGs). Dequeue / strip them on shop archive pages.
+
+// /cake-gallery/ is actually the WC shop archive, not a WP page —
+// is_page() alone returns false on it. Match the same conditions the
+// existing image-rewrite buffer uses.
+function _palermo_is_gallery_view() {
+    return is_shop() || is_product_category() || is_product_tag() || is_page('cake-gallery');
+}
+
+// Debug marker so we can verify this block actually runs.
+add_action('wp_head', function () {
+    if (_palermo_is_gallery_view()) {
+        echo "\n<!-- ios-fix-v2 active -->\n";
+    }
+}, 1);
+
+add_action('wp_enqueue_scripts', function () {
+    if (!_palermo_is_gallery_view()) return;
+
+    // WooCommerce mini-cart fragments XHR — useless on a gallery page.
+    wp_dequeue_script('wc-cart-fragments');
+    wp_dequeue_script('wc-add-to-cart');
+
+    // WordPress emoji SVG preloads — stall under Cloudflare, block load.
+    remove_action('wp_head', 'print_emoji_detection_script', 7);
+    remove_action('wp_print_styles', 'print_emoji_styles');
+    remove_filter('the_content_feed', 'wp_staticize_emoji');
+    remove_filter('comment_text_rss', 'wp_staticize_emoji');
+    remove_filter('wp_mail', 'wp_staticize_emoji_for_email');
+}, 100);
+
+// Strip the hard-coded reCAPTCHA <script>. It's tied to a marketing form
+// not shown on the gallery but still loads, blocking the load event.
+add_action('template_redirect', function () {
+    if (!_palermo_is_gallery_view()) return;
+    ob_start(function ($buffer) {
+        if (empty($buffer)) return $buffer;
+        $buffer = preg_replace(
+            '/<script[^>]*src="[^"]*google\.com\/recaptcha\/api\.js[^"]*"[^>]*><\/script>/i',
+            '',
+            $buffer
+        );
+        return $buffer;
+    });
+}, 1);
+// =============== END: iOS Safari spinner fix ============
 // 
 //================ Section start for favorite cake =======================
 // 

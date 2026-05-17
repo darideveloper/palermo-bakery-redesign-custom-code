@@ -3,169 +3,216 @@ jQuery(document).ready(function ($) {
   if (window.cakeGalleryScriptLoaded) return;
   window.cakeGalleryScriptLoaded = true;
 
+  // --- 0. THUMBNAIL SENTINEL GUARD ---
+  // PHP appends "?t=300" so any rogue URL-rewriter whose regex anchors to
+  // .jpg$/.png$/etc. is a no-op on our thumbnails. This MutationObserver
+  // is a fallback in case anything else swaps src back to a full-size URL.
+  var THUMB_SUFFIX = "-300x300";
+  var SENTINEL = "?t=300";
+  function enforceThumb(img) {
+    var src = img.getAttribute("src") || "";
+    if (src.indexOf(SENTINEL) !== -1) return; // already protected
+    var m = src.match(/^([^?]+?)(?:-\d+x\d+)?\.(jpg|jpeg|png|webp)(?:\?.*)?$/i);
+    if (!m) return;
+    if (src.indexOf("/uploads/") === -1) return;
+    img.setAttribute("src", m[1] + THUMB_SUFFIX + "." + m[2] + SENTINEL);
+  }
+  function enforceAllThumbs() {
+    var nodes = document.querySelectorAll("#sns_woo_list .product-image img");
+    for (var i = 0; i < nodes.length; i++) enforceThumb(nodes[i]);
+  }
+
+  // Persistent guard: watch every gallery img for src mutations and revert
+  // immediately. The check inside enforceThumb prevents recursion (it skips
+  // imgs whose src already contains the sentinel).
+  var srcGuard = null;
+  if (window.MutationObserver) {
+    srcGuard = new MutationObserver(function (records) {
+      for (var i = 0; i < records.length; i++) {
+        var t = records[i].target;
+        if (t && t.tagName === "IMG") enforceThumb(t);
+      }
+    });
+  }
+  function attachSrcGuard(scope) {
+    if (!srcGuard) return;
+    var root = scope && scope.length ? scope[0] : document;
+    var nodes = root.querySelectorAll
+      ? root.querySelectorAll("#sns_woo_list .product-image img, .product-image img")
+      : [];
+    for (var i = 0; i < nodes.length; i++) {
+      srcGuard.observe(nodes[i], { attributes: true, attributeFilter: ["src"] });
+    }
+  }
+
   var galleryTimeout;
+  var prettyPhotoInitialized = false;
+
+  var PRETTYPHOTO_OPTIONS = {
+    hook: "data-rel",
+    social_tools: false,
+    theme: "pp_default",
+    horizontal_padding: 20,
+    opacity: 0.8,
+    deeplinking: false,
+    allow_resize: true,
+    default_width: 900,
+    default_height: 600,
+    overlay_gallery: false,
+    changepicturecallback: function () {
+      var viewportHeight = $(window).height();
+      $(".pp_content_container").css(
+        "max-height",
+        viewportHeight - 120 + "px",
+      );
+    },
+  };
 
   /**
-   * CORE FUNCTION: PREPARE AND BIND GALLERY
+   * Prepare a single product card. Idempotent — safe to call repeatedly.
+   * iOS Safari freeze fix: swap the spinner-GIF src for the real thumbnail,
+   * mark the img as native-lazy, and strip the `.lazy` class so the legacy
+   * jquery.lazyload scroll-handler ignores it. 300+ animated GIFs decoding
+   * in parallel is what was locking up the main thread.
    */
-  function initCakeGallery() {
-    console.log("--- Gallery Refresh: Processing Items ---");
+  function prepareCard($card) {
+    if ($card.hasClass("gallery-ready")) return;
 
-    var $container = $("#sns_woo_list");
-    var $productCards = $(".block-product-inner:not(.gallery-ready)");
+    var $titleLink = $card.find(".item-title a");
+    var actualName = $titleLink.text().trim();
+    var $img = $card.find(".product-image img");
+    if (actualName) $img.attr("alt", actualName);
 
-    if ($productCards.length === 0) {
-      console.log("No new items to process.");
-      return;
-    }
+    var $link = $card.find(".grid-view .product-image, .product-image").first();
+    var originalSrc =
+      $img.attr("data-original") ||
+      $img.attr("data-src") ||
+      $img.attr("data-lazy-src") ||
+      "";
 
-    // 0. FIX ALT ATTRIBUTES (Sync title with image alt)
-    $productCards.each(function () {
-      var $card = $(this);
-      var $titleLink = $card.find(".item-title a");
-      var actualName = $titleLink.text().trim();
+    var currentSrc = $img.attr("src") || "";
+    var isSpinner = currentSrc.indexOf("prod_loading") !== -1 || currentSrc === "";
 
-      if (actualName) {
-        $card.find(".product-image img").attr("alt", actualName);
-      }
-      $card.addClass("gallery-ready");
-    });
+    if (originalSrc) {
+      var isOptimized = originalSrc.indexOf("-300x300") !== -1;
+      var thumbnailSrc = isOptimized
+        ? originalSrc
+        : originalSrc.replace(/(.*)(\.(?:jpg|jpeg|png|webp))$/i, "$1-300x300$2");
 
-    // 1. PREPARE LINKS AND OPTIMIZE PREVIEW IMAGES
-    var $galleryLinks = $container.find(".grid-view .product-image");
-
-    $galleryLinks.each(function () {
-      var $link = $(this);
-      var $img = $link.find("img");
-
-      // Attempt to find the image source (from most to least preferred)
-      var originalSrc =
-        $img.attr("data-original") ||
-        $img.attr("data-src") ||
-        $img.attr("data-lazy-src") ||
-        $img.attr("src");
-
-      if (!originalSrc) return;
-
-      var isReady = $link.hasClass("link-ready");
-      var isOptimized = originalSrc.includes("-300x300");
-
-      if (isReady && isOptimized) {
-        return;
-      }
-
-      if (isReady && !isOptimized) {
-        console.warn(
-          "[Gallery] Warning: Item was reverted to high-res! Re-fixing...",
-          originalSrc,
-        );
-      } else {
-        console.log("[Gallery] Processing item:", originalSrc);
-      }
-
-      // Determine the full-resolution URL for the lightbox:
-      // 1. Prefer data-lightbox-src (set by the PHP filter)
-      // 2. Fall back to stripping -300x300 from data-original
-      // 3. Otherwise use originalSrc as-is
       var fullResSrc =
         $img.attr("data-lightbox-src") ||
         originalSrc.replace(/-300x300(?=\.\w+$)/i, "");
 
-      // A. Set the lightbox href to the full-resolution image
-      if ($link.attr("href") !== fullResSrc) {
+      if ($link.length && $link.attr("href") !== fullResSrc) {
         $link.attr("href", fullResSrc);
         $link.attr("data-rel", "prettyPhoto[cake-gallery]");
         $link.attr("title", $img.attr("alt") || "");
       }
 
-      // B. Ensure the grid preview uses 300x300 thumbnail
-      if (!isOptimized) {
-        var thumbnailSrc = originalSrc.replace(
-          /(.*)(\.(?:jpg|jpeg|png|webp))$/i,
-          "$1-300x300$2",
-        );
+      // Native lazy-loading hands off to the browser. Set this BEFORE swapping
+      // src so the swap respects lazy semantics.
+      $img.attr("loading", "lazy");
+      $img.attr("decoding", "async");
+      $img.removeAttr("srcset");
 
-        console.log("[Gallery] Applying Optimized URL:", thumbnailSrc);
-
-        // Only update data-original — let lazyload copy it to src
-        // when the image scrolls into view. Do NOT remove class="lazy"
-        // and do NOT set src directly, as that would defeat the theme's
-        // lazy loading and cause iOS Safari to crash from memory pressure.
-        $img.attr("data-original", thumbnailSrc);
-        $img.attr("data-src", thumbnailSrc);
-        $img.attr("data-lazy-src", thumbnailSrc);
-        $img.attr("data-gallery-processed", "true");
-
-        $img.removeAttr("srcset");
-        $img.attr("data-srcset", "");
+      // Replace the animated spinner GIF with the real thumbnail. With
+      // loading="lazy", the browser only fetches when near viewport.
+      if (isSpinner) {
+        $img.attr("src", thumbnailSrc);
       }
 
-      $link.addClass("link-ready");
-    });
+      // Disarm jquery.lazyload for this img — its scroll handler is the
+      // other half of the iOS freeze.
+      $img.removeClass("lazy");
+      $img.attr("data-original", thumbnailSrc);
+    }
 
-    // 2. INITIALIZE / RE-BIND PRETTYPHOTO
-    if ($.fn.prettyPhoto) {
-      $("a[data-rel^='prettyPhoto']").unbind("click.prettyphoto");
+    $card.addClass("gallery-ready");
+  }
 
-      $("a[data-rel^='prettyPhoto']").prettyPhoto({
-        hook: "data-rel",
-        social_tools: false,
-        theme: "pp_default",
-        horizontal_padding: 20,
-        opacity: 0.8,
-        deeplinking: false,
-        allow_resize: true,
-        default_width: 900,
-        default_height: 600,
-        overlay_gallery: false,
-
-        changepicturecallback: function () {
-          var viewportHeight = $(window).height();
-          $(".pp_content_container").css(
-            "max-height",
-            viewportHeight - 120 + "px",
-          );
-        },
-      });
-      console.log("prettyPhoto bound to " + $galleryLinks.length + " items.");
+  function initPrettyPhotoOnce() {
+    if (!prettyPhotoInitialized && $.fn.prettyPhoto) {
+      $("a[data-rel^='prettyPhoto']").prettyPhoto(PRETTYPHOTO_OPTIONS);
+      prettyPhotoInitialized = true;
     }
   }
 
   /**
-   * DEBOUNCED REFRESH
+   * Process cards in chunks so iOS Safari can paint and respond to touch
+   * between batches. CHUNK_SIZE is tuned for the cake-gallery (~308 cards).
    */
-  function refreshGalleryDebounced() {
+  var CHUNK_SIZE = 30;
+
+  function processCardsChunked($cards, done) {
+    var i = 0;
+    function step() {
+      var end = Math.min(i + CHUNK_SIZE, $cards.length);
+      for (; i < end; i++) prepareCard($cards.eq(i));
+      if (i < $cards.length) {
+        // Yield to the browser. rAF is ~16ms on iOS — keeps scroll alive.
+        if (window.requestAnimationFrame) requestAnimationFrame(step);
+        else setTimeout(step, 16);
+      } else if (done) {
+        done();
+      }
+    }
+    step();
+  }
+
+  function processCards($scope) {
+    var $cards;
+    if ($scope && $scope.length) {
+      $cards = $scope.find(".block-product-inner").addBack(".block-product-inner");
+    } else {
+      $cards = $(".block-product-inner:not(.gallery-ready)");
+    }
+    if (!$cards.length) return;
+
+    // Append-batches from infinite scroll are small (~20) — do synchronously.
+    if ($cards.length <= CHUNK_SIZE) {
+      $cards.each(function () { prepareCard($(this)); });
+      initPrettyPhotoOnce();
+      return;
+    }
+
+    // Initial page load: process above-the-fold synchronously so the user
+    // sees real images immediately, then yield for the rest.
+    var firstBatch = $cards.slice(0, CHUNK_SIZE);
+    var rest = $cards.slice(CHUNK_SIZE);
+    firstBatch.each(function () { prepareCard($(this)); });
+    initPrettyPhotoOnce();
+    processCardsChunked(rest);
+  }
+
+  function refreshGalleryDebounced($scope) {
     clearTimeout(galleryTimeout);
     galleryTimeout = setTimeout(function () {
-      initCakeGallery();
+      processCards($scope);
+      enforceAllThumbs();
+      attachSrcGuard($scope);
     }, 250);
   }
 
   // --- EXECUTION ---
+  processCards();
 
-  initCakeGallery();
+  // Belt-and-braces: PHP already added the sentinel query string. These
+  // calls only matter for imgs PHP missed (none in the gallery, but
+  // defensive). The MutationObserver catches any future src swap.
+  enforceAllThumbs();
+  attachSrcGuard();
+  setTimeout(function () { enforceAllThumbs(); attachSrcGuard(); }, 500);
+  setTimeout(function () { enforceAllThumbs(); attachSrcGuard(); }, 1500);
 
-  // Listen for common Infinite Scroll events
+  // YITH / theme infinite-scroll hooks. When YITH emits the event it passes
+  // the appended container as the second arg, so process just that subtree.
   $(document).on(
     "yith_infs_added_elem append.infiniteScroll post-load",
-    function () {
-      refreshGalleryDebounced();
+    function (event, payload) {
+      var $scope = null;
+      if (payload && payload.jquery) $scope = payload;
+      else if (payload instanceof HTMLElement) $scope = $(payload);
+      refreshGalleryDebounced($scope);
     },
   );
-
-  // Watch the container for any DOM changes (Filters/AJAX Pagination)
-  var target = document.querySelector("#sns_woo_list");
-  if (target) {
-    var observer = new MutationObserver(function (mutations) {
-      var nodesAdded = mutations.some(function (m) {
-        return m.addedNodes.length > 0;
-      });
-
-      if (nodesAdded) {
-        refreshGalleryDebounced();
-      }
-    });
-
-    observer.observe(target, { childList: true, subtree: true });
-  }
 });

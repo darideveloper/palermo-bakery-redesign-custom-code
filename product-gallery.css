@@ -25,6 +25,7 @@
 #sns_woo_list .item-img a.product-image {
     display: block !important;
     width: 100% !important;
+    aspect-ratio: 1 / 1;
     border-radius: 12px !important;
     overflow: hidden !important;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;

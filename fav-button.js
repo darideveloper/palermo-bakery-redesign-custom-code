@@ -150,11 +150,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 3. UPDATE MAIN GALLERY UI (Hearts & Counter)
   const updateUI = (favArray) => {
-    document.querySelectorAll(".my-custom-fav-btn").forEach((btn) => {
-      const productBlock = btn.closest(".product-inner");
-      if (!productBlock) return;
-      const yithEl = productBlock.querySelector(".yith-wcwl-add-to-wishlist");
-      if (yithEl && favArray.includes(yithEl.dataset.fragmentRef)) {
+    document.querySelectorAll(".my-custom-fav-btn, .save-shared-btn").forEach((btn) => {
+      let productId = null;
+      
+      if (btn.classList.contains("save-shared-btn")) {
+        productId = btn.dataset.productId;
+      } else {
+        const productBlock = btn.closest(".product-inner");
+        if (!productBlock) return;
+        const yithEl = productBlock.querySelector(".yith-wcwl-add-to-wishlist");
+        if (yithEl) productId = yithEl.dataset.fragmentRef;
+      }
+
+      if (productId && favArray.includes(String(productId))) {
         btn.classList.add("is-favorited");
         btn.innerHTML = "❤️";
       } else {
@@ -205,6 +213,9 @@ document.addEventListener("DOMContentLoaded", () => {
       .then((response) => {
         if (response.success) {
           listContainer.innerHTML = response.data;
+          if (typeof updateUI === "function") {
+            updateUI(JSON.parse(localStorage.getItem(storageKey)) || []);
+          }
           if (window.palermoInitLightbox && typeof jQuery !== "undefined") {
             window.palermoInitLightbox(jQuery(listContainer));
           }
@@ -273,20 +284,9 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       const productId = saveSharedBtn.getAttribute("data-product-id");
       if (productId && typeof window.testToggleFav === "function") {
-        let favs = JSON.parse(localStorage.getItem(storageKey)) || [];
-
-        // Only save if it's not already in their list
-        if (!favs.includes(productId)) {
-          window.testToggleFav(productId);
-
-          // Fade out and hide — avoids overflow text inside the 40x40px circle
-          saveSharedBtn.style.transition = "opacity 0.3s ease";
-          saveSharedBtn.style.opacity = "0";
-          setTimeout(() => { saveSharedBtn.style.display = "none"; }, 300);
-
-          // Automatically re-render the user's grid below to show the newly saved cake
-          renderUserFavoritesGrid();
-        }
+        window.testToggleFav(productId);
+        // Automatically re-render the user's grid below to show/remove the cake
+        renderUserFavoritesGrid();
       }
     }
   });

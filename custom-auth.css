@@ -1,4 +1,8 @@
 .tml {
 	max-width: 600px;
-    margin: 50px auto !important;
+  margin: 50px auto !important;
+}
+
+.tml.tml-register {
+	padding: 0 20px;
 }

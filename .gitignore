@@ -28,3 +28,5 @@ fix-gallery-thumbnail-src.php
 # OS-specific
 .DS_Store
 Thumbs.db
+
+*.zip

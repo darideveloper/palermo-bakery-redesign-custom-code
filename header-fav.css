@@ -1,0 +1,13 @@
+#sns_header .main-header .mini-wishlist .tongle:before {
+	content: "\f1fd" !important;
+	font-size: 30px !important;
+}
+
+#sns_header .main-header .mini-wishlist .tongle .number {
+	top: -15px !important;
+  right: -14px !important;
+  font-size: 0.8333em !important;
+  border: 2px solid white !important;
+	width: 24px !important;
+	height: 24px !important;
+}

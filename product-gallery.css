@@ -83,9 +83,7 @@
         z-index: 9999 !important;
     }
 
-    a.pp_expand {
-        display: none !important;
-    }
+
 }
 
 /* adapt images to 100% size of the container */
@@ -159,10 +157,15 @@
 /* 1. Reset broken default image sprites and text-indents */
 div.pp_default .pp_next,
 div.pp_default .pp_previous,
-div.pp_default .pp_close {
+div.pp_default .pp_close,
+div.pp_default .pp_expand {
     text-indent: 0 !important;
     font-size: 0 !important;
     background-image: none !important;
+}
+
+div.pp_default .pp_expand {
+    display: none !important;
 }
 
 /* 2. Configure Hit Areas */
@@ -269,7 +272,5 @@ div.pp_default .pp_close::after {
         top: 5px !important; /* Flushes to the inner container edge on mobile */
         right: 25px !important;
     }
-    a.pp_expand {
-        display: none !important;
-    }
+
 }

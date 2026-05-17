@@ -211,6 +211,24 @@ jQuery(document).ready(function ($) {
   setTimeout(function () { enforceAllThumbs(); attachSrcGuard(); }, 500);
   setTimeout(function () { enforceAllThumbs(); attachSrcGuard(); }, 1500);
 
+  // --- 4. LIGHTBOX CLOSE REDIRECTION ---
+  // Intercept clicks on the prettyPhoto close button and redirect them to the
+  // overlay. This ensures a unified closing sequence and bypasses library-level
+  // inconsistencies. We use the capture phase to ensure we catch the event before
+  // the library's internal listeners.
+  document.addEventListener(
+    "click",
+    function (e) {
+      if (e.target && e.target.closest(".pp_close")) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        var overlay = document.querySelector(".pp_overlay");
+        if (overlay) overlay.click();
+      }
+    },
+    true, // useCapture
+  );
+
   // YITH / theme infinite-scroll hooks. When YITH emits the event it passes
   // the appended container as the second arg, so process just that subtree.
   $(document).on(

@@ -1513,7 +1513,7 @@ function ajax_render_favorite_products() {
     if ($loop->have_posts()) {
         while ($loop->have_posts()) : $loop->the_post();
             $product = wc_get_product(get_the_ID());
-            $image_url = wp_get_attachment_image_url($product->get_image_id(), 'large'); 
+            $image_url = wp_get_attachment_image_url($product->get_image_id(), 'full'); 
             if (!$image_url) $image_url = wc_placeholder_img_src(); 
             ?>
             

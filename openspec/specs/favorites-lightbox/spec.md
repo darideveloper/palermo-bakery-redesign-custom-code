@@ -5,7 +5,7 @@ The system SHALL render each `.masonry-item` image link on the favorites page wi
 
 #### Scenario: Link attributes are present after AJAX render
 - **WHEN** the favorites grid is rendered via AJAX (`ajax_render_favorite_products`)
-- **THEN** each `<a>` inside `.masonry-item` SHALL have `href` equal to the WordPress `large`-size image URL, `data-rel="prettyPhoto[fav-gallery]"`, `title` equal to the product name, and `data-product-id` equal to the product ID
+- **THEN** each `<a>` inside `.masonry-item` SHALL have `href` equal to the WordPress `full`-size image URL, `data-rel="prettyPhoto[fav-gallery]"`, `title` equal to the product name, and `data-product-id` equal to the product ID
 
 #### Scenario: Clicking a favorites card opens the lightbox
 - **WHEN** a user clicks a cake image on the favorites page

@@ -46,7 +46,6 @@ jQuery(document).ready(function ($) {
   }
 
   var galleryTimeout;
-  var prettyPhotoInitialized = false;
 
   var PRETTYPHOTO_OPTIONS = {
     hook: "data-rel",
@@ -130,10 +129,15 @@ jQuery(document).ready(function ($) {
     $card.addClass("gallery-ready");
   }
 
-  function initPrettyPhotoOnce() {
-    if (!prettyPhotoInitialized && $.fn.prettyPhoto) {
-      $("a[data-rel^='prettyPhoto']").prettyPhoto(PRETTYPHOTO_OPTIONS);
-      prettyPhotoInitialized = true;
+  function initLightbox($scope) {
+    if (!$.fn.prettyPhoto) return;
+
+    var selector = "a[data-rel^='prettyPhoto']:not(.pp-bound)";
+    var $targets = $scope ? $scope.find(selector).addBack(selector) : $(selector);
+
+    if ($targets.length) {
+      $targets.prettyPhoto(PRETTYPHOTO_OPTIONS);
+      $targets.addClass("pp-bound");
     }
   }
 
@@ -148,6 +152,9 @@ jQuery(document).ready(function ($) {
     function step() {
       var end = Math.min(i + CHUNK_SIZE, $cards.length);
       for (; i < end; i++) prepareCard($cards.eq(i));
+      // Bind lightbox to the newly prepared elements in this chunk.
+      initLightbox($cards.slice(i - CHUNK_SIZE, i));
+
       if (i < $cards.length) {
         // Yield to the browser. rAF is ~16ms on iOS — keeps scroll alive.
         if (window.requestAnimationFrame) requestAnimationFrame(step);
@@ -171,7 +178,7 @@ jQuery(document).ready(function ($) {
     // Append-batches from infinite scroll are small (~20) — do synchronously.
     if ($cards.length <= CHUNK_SIZE) {
       $cards.each(function () { prepareCard($(this)); });
-      initPrettyPhotoOnce();
+      initLightbox($cards);
       return;
     }
 
@@ -180,7 +187,7 @@ jQuery(document).ready(function ($) {
     var firstBatch = $cards.slice(0, CHUNK_SIZE);
     var rest = $cards.slice(CHUNK_SIZE);
     firstBatch.each(function () { prepareCard($(this)); });
-    initPrettyPhotoOnce();
+    initLightbox(firstBatch);
     processCardsChunked(rest);
   }
 

@@ -12,7 +12,7 @@ docs/
 .*/
 
 # ignore client docs
-client-docs/
+# client-docs/
 
 check*
 node_modules

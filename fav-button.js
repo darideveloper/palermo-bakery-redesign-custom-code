@@ -34,7 +34,11 @@ document.addEventListener("DOMContentLoaded", () => {
     for (const link of links) {
       if (link.href.split("?")[0] === cleanSrc) {
         const productBlock = link.closest(".product-inner");
-        if (!productBlock) continue;
+        if (!productBlock) {
+          // Favorites page: product ID is on the link itself
+          if (link.dataset.productId) return link.dataset.productId;
+          continue;
+        }
         const yithEl = productBlock.querySelector(".yith-wcwl-add-to-wishlist");
         if (yithEl) return yithEl.dataset.fragmentRef;
       }
@@ -100,6 +104,17 @@ document.addEventListener("DOMContentLoaded", () => {
       if (currentLightboxProductId) {
         window.testToggleFav(currentLightboxProductId);
         updateLightboxFavBtn();
+        // Favorites page: fade out and remove the matching card
+        const card = document.getElementById("fav-item-" + currentLightboxProductId);
+        if (card) {
+          card.style.transition = "opacity 0.3s ease";
+          card.style.opacity = "0";
+          setTimeout(() => {
+            card.remove();
+            const favs = JSON.parse(localStorage.getItem(storageKey)) || [];
+            if (favs.length === 0) renderUserFavoritesGrid();
+          }, 300);
+        }
       }
     });
 
@@ -188,7 +203,12 @@ document.addEventListener("DOMContentLoaded", () => {
     })
       .then((res) => res.json())
       .then((response) => {
-        if (response.success) listContainer.innerHTML = response.data;
+        if (response.success) {
+          listContainer.innerHTML = response.data;
+          if (window.palermoInitLightbox && typeof jQuery !== "undefined") {
+            window.palermoInitLightbox(jQuery(listContainer));
+          }
+        }
       })
       .catch((err) => console.error(err));
   };
@@ -212,49 +232,42 @@ document.addEventListener("DOMContentLoaded", () => {
 
     renderGrid(favs, "favorite-cakes-list", false).then(() => {
       if (loadingMsg) loadingMsg.style.display = "none";
-      if (sharePageBtn) sharePageBtn.style.display = "inline-block";
+      if (sharePageBtn) sharePageBtn.style.display = "inline-flex";
     });
   };
 
   // 5. MASTER CLICK EVENT LISTENER
   document.addEventListener("click", function (e) {
-    // A. Main Gallery Hearts
+    // A. Heart Buttons — gallery cards AND favorites page cards
     const btn = e.target.closest(".my-custom-fav-btn");
     if (btn) {
       e.preventDefault();
       const productBlock = btn.closest(".product-inner");
-      if (!productBlock) return;
-      const yithElement = productBlock.querySelector(
-        ".yith-wcwl-add-to-wishlist",
-      );
-      if (yithElement) window.testToggleFav(yithElement.dataset.fragmentRef);
-      return;
-    }
-
-    // B. Remove Buttons (On Favorites Page)
-    const removeBtn = e.target.closest(".remove-fav-btn");
-    if (removeBtn) {
-      e.preventDefault();
-      const productId = removeBtn.getAttribute("data-product-id");
-      if (productId && typeof window.testToggleFav === "function") {
-        window.testToggleFav(productId); // Removes from DB/Storage
-
-        // Visual fade out
-        const masonryItem = removeBtn.closest(".masonry-item");
-        if (masonryItem) {
+      if (productBlock) {
+        // Gallery context
+        const yithElement = productBlock.querySelector(".yith-wcwl-add-to-wishlist");
+        if (yithElement) window.testToggleFav(yithElement.dataset.fragmentRef);
+        return;
+      }
+      // Favorites page context
+      const masonryItem = btn.closest(".masonry-item");
+      if (masonryItem) {
+        const productId = btn.dataset.productId;
+        if (productId) {
+          window.testToggleFav(productId);
           masonryItem.style.transition = "opacity 0.3s ease";
           masonryItem.style.opacity = "0";
-          setTimeout(() => masonryItem.remove(), 300);
+          setTimeout(() => {
+            masonryItem.remove();
+            const favs = JSON.parse(localStorage.getItem(storageKey)) || [];
+            if (favs.length === 0) renderUserFavoritesGrid();
+          }, 300);
         }
-
-        // Check for empty state
-        let favs = JSON.parse(localStorage.getItem(storageKey)) || [];
-        if (favs.length === 0) setTimeout(renderUserFavoritesGrid, 300);
       }
       return;
     }
 
-    // C. Save Buttons (On Shared Section)
+    // B. Save Buttons (On Shared Section)
     const saveSharedBtn = e.target.closest(".save-shared-btn");
     if (saveSharedBtn) {
       e.preventDefault();
@@ -266,9 +279,10 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!favs.includes(productId)) {
           window.testToggleFav(productId);
 
-          // Visual feedback
-          saveSharedBtn.innerHTML = "❤️ Saved";
-          saveSharedBtn.style.color = "#d93025";
+          // Fade out and hide — avoids overflow text inside the 40x40px circle
+          saveSharedBtn.style.transition = "opacity 0.3s ease";
+          saveSharedBtn.style.opacity = "0";
+          setTimeout(() => { saveSharedBtn.style.display = "none"; }, 300);
 
           // Automatically re-render the user's grid below to show the newly saved cake
           renderUserFavoritesGrid();
@@ -284,12 +298,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const link = e.target.closest('a[data-rel^="prettyPhoto"]');
       if (!link) return;
       const productBlock = link.closest(".product-inner");
-      if (!productBlock) return;
-      const yithEl = productBlock.querySelector(".yith-wcwl-add-to-wishlist");
-      if (yithEl) {
-        currentLightboxProductId = yithEl.dataset.fragmentRef;
-        setTimeout(injectLightboxFavBtn, 250);
+      if (productBlock) {
+        // Gallery context: resolve via YITH wishlist element
+        const yithEl = productBlock.querySelector(".yith-wcwl-add-to-wishlist");
+        if (yithEl) currentLightboxProductId = yithEl.dataset.fragmentRef;
+      } else {
+        // Favorites page context: product ID is on the link
+        currentLightboxProductId = link.dataset.productId || null;
       }
+      if (currentLightboxProductId) setTimeout(injectLightboxFavBtn, 250);
     },
     true,
   );
@@ -315,10 +332,10 @@ document.addEventListener("DOMContentLoaded", () => {
         favs.join(",");
 
       navigator.clipboard.writeText(shareUrl).then(() => {
-        const originalText = sharePageBtn.innerHTML;
-        sharePageBtn.innerHTML = "✅ Link Copied!";
+        const originalHTML = sharePageBtn.innerHTML;
+        sharePageBtn.innerHTML = '<span class="share-btn-icon">✅</span><span class="share-btn-text">Link Copied!</span>';
         setTimeout(() => {
-          sharePageBtn.innerHTML = originalText;
+          sharePageBtn.innerHTML = originalHTML;
         }, 2000);
       });
     });

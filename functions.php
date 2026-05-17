@@ -1373,9 +1373,31 @@ add_action('template_redirect', function () {
     });
 }, 1);
 // =============== END: iOS Safari spinner fix ============
-// 
+//
 //================ Section start for favorite cake =======================
-// 
+//
+// Force-enqueue WooCommerce's prettyPhoto on the favorites page.
+// WC only enqueues it on shop/product views; the favorites page is a
+// regular WP page with a shortcode, so without this the lightbox library
+// is missing and image-lightbox.js can't bind.
+add_action('wp_enqueue_scripts', function () {
+    if (!is_page('favorite-cakes') && !is_page(12)) return;
+    $wc_url = plugins_url('', WC_PLUGIN_FILE);
+    wp_enqueue_script(
+        'prettyPhoto',
+        $wc_url . '/assets/js/prettyPhoto/jquery.prettyPhoto.min.js',
+        array('jquery'),
+        '3.1.6',
+        true
+    );
+    wp_enqueue_style(
+        'woocommerce_prettyPhoto_css',
+        $wc_url . '/assets/css/prettyPhoto.css',
+        array(),
+        '3.1.6'
+    );
+}, 20);
+
 // ==========================================
 // 1. PASS SECURE DATA TO JAVASCRIPT
 // ==========================================
@@ -1439,7 +1461,7 @@ function render_favorite_cakes_page() {
         <div id="favorite-cakes-list" class="cake-masonry-grid"></div>
         
         <div style="text-align: center; margin-top: 40px;">
-            <button id="share-favs-page-btn" class="button" style="display:none; padding: 12px 24px; font-weight: bold; background: #333; color: #fff; border: none; border-radius: 6px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">Share My Favorites</button>
+            <button id="share-favs-page-btn" class="button" style="display:none;"><span class="share-btn-icon">📤</span><span class="share-btn-text">Share My Favorites</span></button>
         </div>
     </div>
     <?php return ob_get_clean();
@@ -1481,17 +1503,20 @@ function ajax_render_favorite_products() {
             ?>
             
             <div class="masonry-item" id="fav-item-<?php echo esc_attr(get_the_ID()); ?>">
-                <a href="<?php echo esc_url(get_permalink()); ?>">
+                <a href="<?php echo esc_url($image_url); ?>"
+                   data-rel="prettyPhoto[fav-gallery]"
+                   title="<?php echo esc_attr(get_the_title()); ?>"
+                   data-product-id="<?php echo esc_attr(get_the_ID()); ?>">
                     <img src="<?php echo esc_url($image_url); ?>" alt="<?php echo esc_attr(get_the_title()); ?>">
                     <div class="masonry-label"><?php echo esc_html(get_the_title()); ?></div>
                 </a>
-                
+
                 <?php if ($is_shared): ?>
                     <!-- Button for cakes shared WITH the user -->
                     <button class="save-shared-btn" data-product-id="<?php echo esc_attr(get_the_ID()); ?>" aria-label="Save to my favorites">🤍</button>
                 <?php else: ?>
                     <!-- Button for the user's OWN cakes -->
-                    <button class="remove-fav-btn" data-product-id="<?php echo esc_attr(get_the_ID()); ?>" aria-label="Remove from favorites">✖</button>
+                    <button class="my-custom-fav-btn" data-product-id="<?php echo esc_attr(get_the_ID()); ?>" aria-label="Remove from favorites">❤️</button>
                 <?php endif; ?>
             </div>
 

@@ -140,6 +140,7 @@ jQuery(document).ready(function ($) {
       $targets.addClass("pp-bound");
     }
   }
+  window.palermoInitLightbox = initLightbox;
 
   /**
    * Process cards in chunks so iOS Safari can paint and respond to touch

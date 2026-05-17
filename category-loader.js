@@ -10,8 +10,16 @@ jQuery(document).ready(function ($) {
     $('body').append(loaderHTML)
   }
 
+  // Move auth buttons out of hidden toolbar and place below the visible filter widget
+  if ($('.gallery-auth-buttons').length > 0 && $('#woocommerce_product_categories-3').length > 0) {
+    $('.gallery-auth-buttons').insertAfter('#woocommerce_product_categories-3');
+  }
+
+  // Inject Favorite Cakes pill
+  $('#woocommerce_product_categories-3 ul.product-categories').prepend('<li><a href="/favorite-cakes" class="fav-pill-link">♥ Favorite Cakes</a></li>');
+
   // 2. Listen for clicks on the category pill buttons
-  $('#woocommerce_product_categories-3 ul.product-categories li a').on('click', function (e) {
+  $('#woocommerce_product_categories-3 ul.product-categories').on('click', 'li a', function (e) {
 
     // Safety check: if the user holds CTRL/CMD to open in a new tab, don't show the spinner
     if (e.ctrlKey || e.metaKey || $(this).attr('target') === '_blank') {

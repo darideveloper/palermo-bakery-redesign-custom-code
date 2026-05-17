@@ -1399,6 +1399,21 @@ add_action('wp_enqueue_scripts', function () {
 }, 20);
 
 // ==========================================
+// Cake Gallery Auth Buttons
+// ==========================================
+add_action('woocommerce_before_shop_loop', function() {
+    if (!_palermo_is_gallery_view() || is_user_logged_in()) {
+        return;
+    }
+    ?>
+    <div class="gallery-auth-buttons">
+        <a href="/login" class="gallery-auth-btn">Login</a>
+        <a href="/register" class="gallery-auth-btn signup">Sign Up</a>
+    </div>
+    <?php
+});
+
+// ==========================================
 // 1. PASS SECURE DATA TO JAVASCRIPT
 // ==========================================
 add_action('wp_head', 'inject_cake_favs_data');

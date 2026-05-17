@@ -45,17 +45,54 @@ document.addEventListener("DOMContentLoaded", () => {
   const injectLightboxFavBtn = () => {
     const container = document.getElementById("pp_full_res");
     if (!container) return;
-    let btn = document.getElementById("lightbox-fav-btn");
-    if (btn) {
+    if (document.getElementById("lightbox-btn-container")) {
       updateLightboxFavBtn();
       return;
     }
-    btn = document.createElement("button");
+
+    const btnWrapper = document.createElement("div");
+    btnWrapper.id = "lightbox-btn-container";
+    container.appendChild(btnWrapper);
+
+    // Share button — left
+    const shareBtn = document.createElement("button");
+    shareBtn.id = "lightbox-share-btn";
+    shareBtn.className = "my-custom-lightbox-btn";
+    shareBtn.setAttribute("aria-label", "Share cake");
+    shareBtn.innerHTML = '<i class="fa fa-share-alt"></i>';
+    btnWrapper.appendChild(shareBtn);
+
+    const showShareToast = (message) => {
+      const existing = document.getElementById("lightbox-share-toast");
+      if (existing) existing.remove();
+      const toast = document.createElement("div");
+      toast.id = "lightbox-share-toast";
+      toast.textContent = message;
+      btnWrapper.appendChild(toast);
+      setTimeout(() => toast.remove(), 2000);
+    };
+
+    shareBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!currentLightboxProductId) return;
+      const shareUrl =
+        window.location.origin +
+        "/favorite-cakes/?shared_favs=" +
+        currentLightboxProductId;
+      navigator.clipboard
+        .writeText(shareUrl)
+        .then(() => showShareToast("Link Copied!"))
+        .catch(() => showShareToast("Copy failed"));
+    });
+
+    // Fav button — right
+    const btn = document.createElement("button");
     btn.id = "lightbox-fav-btn";
     btn.className = "my-custom-fav-btn";
     btn.setAttribute("aria-label", "Add to favorites");
     btn.innerHTML = "🤍";
-    container.appendChild(btn);
+    btnWrapper.appendChild(btn);
 
     btn.addEventListener("click", (e) => {
       e.preventDefault();
@@ -258,7 +295,7 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 
   const lightboxBodyObserver = new MutationObserver(() => {
-    if (document.querySelector(".pp_pic_holder") && !document.getElementById("lightbox-fav-btn")) {
+    if (document.querySelector(".pp_pic_holder") && !document.getElementById("lightbox-btn-container")) {
       injectLightboxFavBtn();
     }
   });

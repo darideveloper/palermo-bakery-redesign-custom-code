@@ -281,7 +281,7 @@ div.pp_default .pp_close::after {
     top: auto !important;
     right: auto !important;
     z-index: 999999 !important;
-    box-shadow: rgba(0, 0, 0, 1) 0px 7px 40px 4px;
+    box-shadow: rgba(0, 0, 0, 0.4) 0px 7px 20px 1px;
 }
 
 #lightbox-fav-btn:hover {

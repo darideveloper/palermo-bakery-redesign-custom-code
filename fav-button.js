@@ -2,6 +2,7 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   const storageKey = "my_cake_favs";
+  let currentLightboxProductId = null;
 
   // 1. SYNC TO WORDPRESS
   const syncToServer = (favArray) => {
@@ -17,7 +18,85 @@ document.addEventListener("DOMContentLoaded", () => {
     }).catch((err) => console.error(err));
   };
 
-  // 2. UPDATE MAIN GALLERY UI (Hearts & Counter)
+  // 2. LIGHTBOX FAV BUTTON HELPERS
+  const updateLightboxFavBtn = () => {
+    const btn = document.getElementById("lightbox-fav-btn");
+    if (!btn) return;
+    const favs = JSON.parse(localStorage.getItem(storageKey)) || [];
+    const isFav = favs.includes(currentLightboxProductId);
+    btn.innerHTML = isFav ? "❤️" : "🤍";
+    btn.classList.toggle("is-favorited", isFav);
+  };
+
+  const getLightboxProductId = (imgSrc) => {
+    const cleanSrc = imgSrc.split("?")[0];
+    const links = document.querySelectorAll('a[data-rel^="prettyPhoto"]');
+    for (const link of links) {
+      if (link.href.split("?")[0] === cleanSrc) {
+        const productBlock = link.closest(".product-inner");
+        if (!productBlock) continue;
+        const yithEl = productBlock.querySelector(".yith-wcwl-add-to-wishlist");
+        if (yithEl) return yithEl.dataset.fragmentRef;
+      }
+    }
+    return null;
+  };
+
+  const injectLightboxFavBtn = () => {
+    const container = document.getElementById("pp_full_res");
+    if (!container) return;
+    let btn = document.getElementById("lightbox-fav-btn");
+    if (btn) {
+      updateLightboxFavBtn();
+      return;
+    }
+    btn = document.createElement("button");
+    btn.id = "lightbox-fav-btn";
+    btn.className = "my-custom-fav-btn";
+    btn.setAttribute("aria-label", "Add to favorites");
+    btn.innerHTML = "🤍";
+    container.appendChild(btn);
+
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (currentLightboxProductId) {
+        window.testToggleFav(currentLightboxProductId);
+        updateLightboxFavBtn();
+      }
+    });
+
+    const img = container.querySelector("img");
+    if (img) {
+      const attrObserver = new MutationObserver(() => {
+        const newId = getLightboxProductId(img.src);
+        if (newId && newId !== currentLightboxProductId) {
+          currentLightboxProductId = newId;
+          updateLightboxFavBtn();
+        }
+      });
+      attrObserver.observe(img, { attributes: true, attributeFilter: ["src"] });
+
+      const childObserver = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          for (const node of mutation.addedNodes) {
+            if (node.tagName === "IMG") {
+              const newId = getLightboxProductId(node.src);
+              if (newId && newId !== currentLightboxProductId) {
+                currentLightboxProductId = newId;
+                updateLightboxFavBtn();
+              }
+            }
+          }
+        }
+      });
+      childObserver.observe(container, { childList: true });
+    }
+
+    updateLightboxFavBtn();
+  };
+
+  // 3. UPDATE MAIN GALLERY UI (Hearts & Counter)
   const updateUI = (favArray) => {
     document.querySelectorAll(".my-custom-fav-btn").forEach((btn) => {
       const productBlock = btn.closest(".product-inner");
@@ -160,6 +239,30 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   });
+
+  // 9. LIGHTBOX OPEN DETECTION & PRODUCT ID CAPTURE
+  document.addEventListener(
+    "click",
+    (e) => {
+      const link = e.target.closest('a[data-rel^="prettyPhoto"]');
+      if (!link) return;
+      const productBlock = link.closest(".product-inner");
+      if (!productBlock) return;
+      const yithEl = productBlock.querySelector(".yith-wcwl-add-to-wishlist");
+      if (yithEl) {
+        currentLightboxProductId = yithEl.dataset.fragmentRef;
+        setTimeout(injectLightboxFavBtn, 250);
+      }
+    },
+    true,
+  );
+
+  const lightboxBodyObserver = new MutationObserver(() => {
+    if (document.querySelector(".pp_pic_holder") && !document.getElementById("lightbox-fav-btn")) {
+      injectLightboxFavBtn();
+    }
+  });
+  lightboxBodyObserver.observe(document.body, { childList: true, subtree: false });
 
   // Share Button Event
   const sharePageBtn = document.getElementById("share-favs-page-btn");

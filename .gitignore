@@ -5,8 +5,9 @@ openspec/changes/*
 # Do not ignore archived proposals
 !openspec/changes/archive/
 
-# skip docs
-docs/
+# skip docs (except the client-facing master readme)
+docs/*
+!docs/client-readme.md
 
 # ignore by default all hiden folders (like agents folders)
 .*/

@@ -254,5 +254,14 @@ document.addEventListener('DOMContentLoaded', () => {
       syncGlobalColor('White')
     }
   }
+
+  // Run with multiple delays to ensure it sticks and handles late-loaded content
+  setTimeout(setWhiteDefault, 200)
+  setTimeout(setWhiteDefault, 500)
   setTimeout(setWhiteDefault, 1000)
+  setTimeout(setWhiteDefault, 2000)
+
+  window.addEventListener('load', () => {
+    setTimeout(setWhiteDefault, 500)
+  })
 })

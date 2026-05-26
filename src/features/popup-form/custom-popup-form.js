@@ -10,19 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
         <button id="form-trigger-btn" aria-label="Ask Me">
             <div class="cupcake-container">
                 <div class="toothpick-flag">Ask Me</div>
-                <!-- Simple SVG Cupcake -->
-                <svg viewBox="0 0 100 100" class="cupcake-svg" xmlns="http://www.w3.org/2000/svg">
-                    <!-- Cherry -->
-                    <circle cx="50" cy="15" r="8" fill="#d93025" />
-                    <!-- Frosting -->
-                    <path d="M 20 50 Q 20 20, 50 25 Q 80 20, 80 50 Q 85 55, 80 60 L 20 60 Q 15 55, 20 50 Z" fill="#ffb6c1" />
-                    <!-- Base -->
-                    <path d="M 25 60 L 30 95 L 70 95 L 75 60 Z" fill="#d2b48c" />
-                    <line x1="35" y1="60" x2="38" y2="95" stroke="#a0522d" stroke-width="2" />
-                    <line x1="45" y1="60" x2="46" y2="95" stroke="#a0522d" stroke-width="2" />
-                    <line x1="55" y1="60" x2="54" y2="95" stroke="#a0522d" stroke-width="2" />
-                    <line x1="65" y1="60" x2="62" y2="95" stroke="#a0522d" stroke-width="2" />
-                </svg>
+                <!-- PNG Cupcake Icon -->
+                <img class="cupcake-img" src="https://ccdev2026.wpenginepowered.com/wp-content/uploads/2026/05/cupcake-help-icon-120.png" alt="Ask Me">
             </div>
         </button>
 

@@ -11,6 +11,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let isSyncing = false;
 
+  // Style injection for gold spinner loader
+  const style = document.createElement('style')
+  style.textContent = `
+    .modal-cake-loader {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-top: 4px solid #d4af37; /* Gold color matching theme */
+      border-radius: 50%;
+      animation: modal-spin 0.8s linear infinite;
+      z-index: 10001;
+      display: none;
+      pointer-events: none;
+    }
+    .modal-cake-loader.is-loading { display: block; }
+    @keyframes modal-spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+  `
+  document.head.appendChild(style)
+
+  const getLoader = () => {
+    let loader = document.querySelector('.modal-cake-loader')
+    if (!loader) {
+      const container = document.querySelector('.product-image-lightbox-main') || document.querySelector('.pp_content') || document.body
+      if (container) {
+        loader = document.createElement('div')
+        loader.className = 'modal-cake-loader'
+        container.appendChild(loader)
+      }
+    }
+    return loader
+  }
+
   // Helper to get replacement color based on target
   const replaceColor = (str, newColor, isUrl = false) => {
     if (!str) return str
@@ -155,6 +194,25 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const img = document.querySelector('.product-image-lightbox-image')
         if (img && img.src) {
+          // Robust loader handling whenever the lightbox image src changes
+          const oldSrc = img.getAttribute('data-prev-src') || ''
+          if (oldSrc !== img.src && !img.src.includes('prod_loading') && !img.src.includes('loading')) {
+            img.setAttribute('data-prev-src', img.src)
+            
+            const loader = getLoader()
+            if (loader) loader.classList.add('is-loading')
+            
+            const hideLoader = () => {
+              if (loader) loader.classList.remove('is-loading')
+            }
+            
+            if (img.complete) {
+              hideLoader()
+            }
+            img.addEventListener('load', hideLoader, { once: true })
+            img.addEventListener('error', hideLoader, { once: true })
+          }
+
           const color = detectColorFromSrc(img.src)
           if (color === 'Ivory' && !ivoryCheckbox.checked) {
             ivoryCheckbox.checked = true

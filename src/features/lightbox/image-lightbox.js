@@ -230,6 +230,58 @@ jQuery(document).ready(function ($) {
     true, // useCapture
   );
 
+  // --- 5. LIGHTBOX SWIPE NAVIGATION ---
+  // Captures horizontal swipe gestures on mobile to trigger Next/Prev buttons.
+  // We use the capture phase to bypass library-level stopPropagation and a
+  // 50px threshold to distinguish swipes from taps.
+  var touchstartX = 0;
+  var touchstartY = 0;
+
+  document.addEventListener(
+    "touchstart",
+    function (e) {
+      // Ignore if touch started on interactive UI (Fav/Share buttons)
+      if (e.target.closest("#lightbox-btn-container")) return;
+
+      var container = e.target.closest(".pp_pic_holder");
+      if (container) {
+        touchstartX = e.changedTouches[0].screenX;
+        touchstartY = e.changedTouches[0].screenY;
+      }
+    },
+    { capture: true, passive: true },
+  );
+
+  document.addEventListener(
+    "touchend",
+    function (e) {
+      if (e.target.closest("#lightbox-btn-container")) return;
+
+      var container = e.target.closest(".pp_pic_holder");
+      if (container) {
+        var touchendX = e.changedTouches[0].screenX;
+        var touchendY = e.changedTouches[0].screenY;
+
+        var dX = touchendX - touchstartX;
+        var dY = touchendY - touchstartY;
+
+        // Intent detection: must be primarily horizontal and exceed 50px
+        if (Math.abs(dX) > Math.abs(dY) && Math.abs(dX) > 50) {
+          if (dX < 0) {
+            // Swipe Left -> Next
+            var $next = $(".pp_next");
+            if ($next.length && $next.css("display") !== "none") $next.click();
+          } else {
+            // Swipe Right -> Prev
+            var $prev = $(".pp_previous");
+            if ($prev.length && $prev.css("display") !== "none") $prev.click();
+          }
+        }
+      }
+    },
+    { capture: true, passive: true },
+  );
+
   // YITH / theme infinite-scroll hooks. When YITH emits the event it passes
   // the appended container as the second arg, so process just that subtree.
   $(document).on(

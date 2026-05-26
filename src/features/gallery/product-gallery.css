@@ -241,6 +241,9 @@ div.pp_default .pp_close::after {
 }
 
 /* 5. Mobile Structural Fallbacks & Alignment */
+div.pp_pic_holder {
+    touch-action: pan-y;
+}
 @media (max-width: 767px) {
     div.pp_pic_holder {
         width: 100% !important;

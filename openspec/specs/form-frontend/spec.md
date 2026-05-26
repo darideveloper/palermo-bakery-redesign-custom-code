@@ -39,3 +39,10 @@ The application MUST adapt existing CSS selectors from `form-style.css` and `foo
 - Then selectors in `form-style.css` and `footer-form-style.css` apply to the new form's inputs and buttons, maintaining visual consistency without duplicating heavy CSS rules.
 - And form fields have vertical spacing for improved readability.
 
+### Requirement: Trigger Visual Presentation
+The popup form trigger MUST use the provided remote PNG image (`https://ccdev2026.wpenginepowered.com/wp-content/uploads/2026/05/cupcake-help-icon-120.png`) instead of an inline SVG, while maintaining its function as a floating toggle button.
+
+#### Scenario: Visual Display
+- **WHEN** the floating trigger button is rendered on the page
+- **THEN** it displays the specific remote PNG image properly sized and contained within the circular button boundary, rather than an inline SVG.
+

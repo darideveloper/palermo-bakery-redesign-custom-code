@@ -306,6 +306,9 @@ div.pp_default .pp_close::after {
     right: auto !important;
     transform: none !important;
     box-shadow: rgba(0, 0, 0, 0.4) 0px 7px 20px 1px;
+    width: 56px !important;
+    height: 56px !important;
+    font-size: 28px !important;
 }
 
 #lightbox-fav-btn:hover {
@@ -323,13 +326,14 @@ div.pp_default .pp_close::after {
 }
 
 #lightbox-share-btn {
+    position: relative !important;
     border-radius: 50% !important;
     border: none !important;
     background: rgba(255, 255, 255, 0.9) !important;
     color: rgb(102, 102, 102) !important;
-    font-size: 20px;
-    width: 40px;
-    height: 40px;
+    font-size: 28px !important;
+    width: 56px !important;
+    height: 56px !important;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -338,8 +342,35 @@ div.pp_default .pp_close::after {
     transition: transform 0.2s ease;
 }
 
+#lightbox-share-btn::after {
+    content: "Copy Link";
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: sans-serif;
+    font-weight: normal;
+    white-space: nowrap;
+    line-height: 1;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    pointer-events: none;
+}
+
+#lightbox-share-btn:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
 #lightbox-share-btn:hover {
     transform: scale(1.15);
     background: rgba(255, 255, 255, 0.9) !important;
     color: rgb(102, 102, 102) !important;
 }
+

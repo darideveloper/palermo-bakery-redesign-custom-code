@@ -1423,7 +1423,8 @@ function inject_cake_favs_data() {
         var cakeFavsData = {
             ajaxUrl: '<?php echo esc_url(admin_url('admin-ajax.php')); ?>',
             nonce: '<?php echo wp_create_nonce('cake_fav_nonce'); ?>',
-            isLoggedIn: <?php echo is_user_logged_in() ? 'true' : 'false'; ?>
+            isLoggedIn: <?php echo is_user_logged_in() ? 'true' : 'false'; ?>,
+            loginUrl: '<?php echo esc_url(wp_login_url(get_permalink())); ?>'
         };
     </script>
     <?php

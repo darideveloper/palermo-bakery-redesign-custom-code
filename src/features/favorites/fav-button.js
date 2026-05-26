@@ -1,7 +1,8 @@
 // fav-button.js
 
 document.addEventListener("DOMContentLoaded", () => {
-  const storageKey = "my_cake_favs";
+  let userFavs = [];
+  let isFavsLoaded = false;
   let currentLightboxProductId = null;
 
   // 1. SYNC TO WORDPRESS
@@ -22,8 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const updateLightboxFavBtn = () => {
     const btn = document.getElementById("lightbox-fav-btn");
     if (!btn) return;
-    const favs = JSON.parse(localStorage.getItem(storageKey)) || [];
-    const isFav = favs.includes(currentLightboxProductId);
+    const isFav = userFavs.includes(String(currentLightboxProductId));
     btn.innerHTML = isFav ? "❤️" : "🤍";
     btn.classList.toggle("is-favorited", isFav);
   };
@@ -101,6 +101,13 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
+
+      // Enforce Login
+      if (typeof cakeFavsData === "undefined" || !cakeFavsData.isLoggedIn) {
+        if (typeof cakeFavsData !== "undefined") window.location.href = cakeFavsData.loginUrl;
+        return;
+      }
+
       if (currentLightboxProductId) {
         window.testToggleFav(currentLightboxProductId);
         updateLightboxFavBtn();
@@ -111,8 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
           card.style.opacity = "0";
           setTimeout(() => {
             card.remove();
-            const favs = JSON.parse(localStorage.getItem(storageKey)) || [];
-            if (favs.length === 0) renderUserFavoritesGrid();
+            if (userFavs.length === 0) renderUserFavoritesGrid();
           }, 300);
         }
       }
@@ -150,6 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 3. UPDATE MAIN GALLERY UI (Hearts & Counter)
   const updateUI = (favArray) => {
+    const list = favArray || userFavs;
     document.querySelectorAll(".my-custom-fav-btn, .save-shared-btn").forEach((btn) => {
       let productId = null;
       
@@ -162,7 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (yithEl) productId = yithEl.dataset.fragmentRef;
       }
 
-      if (productId && favArray.includes(String(productId))) {
+      if (productId && list.includes(String(productId))) {
         btn.classList.add("is-favorited");
         btn.innerHTML = "❤️";
       } else {
@@ -171,25 +178,34 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
     const headerCounter = document.querySelector(".mini-wishlist .number");
-    if (headerCounter) headerCounter.textContent = favArray.length;
+    if (headerCounter) headerCounter.textContent = list.length;
   };
 
   // 3. TOGGLE FAVORITE LOGIC
   window.testToggleFav = (productId) => {
-    productId = String(productId);
-    let favs = JSON.parse(localStorage.getItem(storageKey)) || [];
-    if (favs.includes(productId)) {
-      favs = favs.filter((id) => id !== productId);
-    } else {
-      favs.push(productId);
+    // Enforce Login
+    if (typeof cakeFavsData === "undefined" || !cakeFavsData.isLoggedIn) {
+      if (typeof cakeFavsData !== "undefined") window.location.href = cakeFavsData.loginUrl;
+      return;
     }
-    localStorage.setItem(storageKey, JSON.stringify(favs));
-    updateUI(favs);
-    syncToServer(favs);
+
+    // Guard: Don't allow toggling until server sync is complete
+    if (!isFavsLoaded) return;
+
+    productId = String(productId);
+    if (userFavs.includes(productId)) {
+      userFavs = userFavs.filter((id) => id !== productId);
+    } else {
+      userFavs.push(productId);
+    }
+    
+    updateUI(userFavs);
+    syncToServer(userFavs);
   };
 
   // 4. THE AJAX RENDERER (Builds the Masonry Grids)
   const renderGrid = (favs, containerId, isShared) => {
+    if (typeof cakeFavsData === "undefined") return Promise.resolve();
     const listContainer = document.getElementById(containerId);
     if (!listContainer) return Promise.resolve();
 
@@ -213,9 +229,7 @@ document.addEventListener("DOMContentLoaded", () => {
       .then((response) => {
         if (response.success) {
           listContainer.innerHTML = response.data;
-          if (typeof updateUI === "function") {
-            updateUI(JSON.parse(localStorage.getItem(storageKey)) || []);
-          }
+          updateUI(userFavs);
           if (window.palermoInitLightbox && typeof jQuery !== "undefined") {
             window.palermoInitLightbox(jQuery(listContainer));
           }
@@ -226,22 +240,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Builds the user's specific favorites grid
   const renderUserFavoritesGrid = () => {
-    let favs = JSON.parse(localStorage.getItem(storageKey)) || [];
+    if (typeof cakeFavsData === "undefined") return;
     const loadingMsg = document.getElementById("fav-loading-msg");
     const sharePageBtn = document.getElementById("share-favs-page-btn");
+    const listContainer = document.getElementById("favorite-cakes-list");
 
-    if (favs.length === 0) {
+    if (!cakeFavsData.isLoggedIn) {
+        if (loadingMsg) {
+            loadingMsg.style.display = "block";
+            loadingMsg.innerHTML = 'Please <a href="' + cakeFavsData.loginUrl + '">login</a> to save your favorite cakes.';
+        }
+        if (sharePageBtn) sharePageBtn.style.display = "none";
+        if (listContainer) listContainer.innerHTML = "";
+        return;
+    }
+
+    if (userFavs.length === 0) {
       if (loadingMsg) {
         loadingMsg.style.display = "block";
         loadingMsg.textContent = "Your favorites list is empty.";
       }
       if (sharePageBtn) sharePageBtn.style.display = "none";
-      const listContainer = document.getElementById("favorite-cakes-list");
       if (listContainer) listContainer.innerHTML = "";
       return;
     }
 
-    renderGrid(favs, "favorite-cakes-list", false).then(() => {
+    renderGrid(userFavs, "favorite-cakes-list", false).then(() => {
       if (loadingMsg) loadingMsg.style.display = "none";
       if (sharePageBtn) sharePageBtn.style.display = "inline-flex";
     });
@@ -253,6 +277,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const btn = e.target.closest(".my-custom-fav-btn");
     if (btn) {
       e.preventDefault();
+
+      // Enforce Login
+      if (typeof cakeFavsData === "undefined" || !cakeFavsData.isLoggedIn) {
+        if (typeof cakeFavsData !== "undefined") window.location.href = cakeFavsData.loginUrl;
+        return;
+      }
+
       const productBlock = btn.closest(".product-inner");
       if (productBlock) {
         // Gallery context
@@ -270,8 +301,7 @@ document.addEventListener("DOMContentLoaded", () => {
           masonryItem.style.opacity = "0";
           setTimeout(() => {
             masonryItem.remove();
-            const favs = JSON.parse(localStorage.getItem(storageKey)) || [];
-            if (favs.length === 0) renderUserFavoritesGrid();
+            if (userFavs.length === 0) renderUserFavoritesGrid();
           }, 300);
         }
       }
@@ -282,6 +312,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const saveSharedBtn = e.target.closest(".save-shared-btn");
     if (saveSharedBtn) {
       e.preventDefault();
+
+      // Enforce Login
+      if (typeof cakeFavsData === "undefined" || !cakeFavsData.isLoggedIn) {
+        if (typeof cakeFavsData !== "undefined") window.location.href = cakeFavsData.loginUrl;
+        return;
+      }
+
       const productId = saveSharedBtn.getAttribute("data-product-id");
       if (productId && typeof window.testToggleFav === "function") {
         window.testToggleFav(productId);
@@ -323,13 +360,12 @@ document.addEventListener("DOMContentLoaded", () => {
   if (sharePageBtn) {
     sharePageBtn.addEventListener("click", (e) => {
       e.preventDefault();
-      let favs = JSON.parse(localStorage.getItem(storageKey)) || [];
 
       // Generate the link pointing directly to the favorites page
       const shareUrl =
         window.location.origin +
         "/favorite-cakes/?shared_favs=" +
-        favs.join(",");
+        userFavs.join(",");
 
       navigator.clipboard.writeText(shareUrl).then(() => {
         const originalHTML = sharePageBtn.innerHTML;
@@ -343,8 +379,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 6. INITIALIZE ON LOAD
   const initFavorites = () => {
-    let localFavs = JSON.parse(localStorage.getItem(storageKey)) || [];
-
     // Check URL for Shared Links
     const urlParams = new URLSearchParams(window.location.search);
     const sharedIdsStr = urlParams.get("shared_favs");
@@ -375,26 +409,31 @@ document.addEventListener("DOMContentLoaded", () => {
         .then((res) => res.json())
         .then((response) => {
           if (response.success && response.data) {
-            const serverFavs = response.data.split(",").filter(Boolean);
-            const mergedFavs = [...new Set([...localFavs, ...serverFavs])];
-            localStorage.setItem(storageKey, JSON.stringify(mergedFavs));
+            userFavs = response.data.split(",").filter(Boolean);
+            
+            // Legacy Cleanup
+            localStorage.removeItem("my_cake_favs");
 
-            updateUI(mergedFavs);
+            isFavsLoaded = true;
+            updateUI(userFavs);
             renderUserFavoritesGrid();
-            if (mergedFavs.length > serverFavs.length) syncToServer(mergedFavs);
           } else {
-            updateUI(localFavs);
+            isFavsLoaded = true;
+            updateUI(userFavs);
             renderUserFavoritesGrid();
-            if (localFavs.length > 0) syncToServer(localFavs);
           }
         })
         .catch(() => {
-          updateUI(localFavs);
+          isFavsLoaded = true;
+          updateUI(userFavs);
           renderUserFavoritesGrid();
         });
     } else {
-      updateUI(localFavs);
+      isFavsLoaded = true;
+      updateUI(userFavs);
       renderUserFavoritesGrid();
+      // Even for guests, clean up any old storage to be safe
+      localStorage.removeItem("my_cake_favs");
     }
   };
 
@@ -412,8 +451,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (imgContainer) imgContainer.appendChild(heartBtn);
     });
 
-    let currentFavs = JSON.parse(localStorage.getItem(storageKey)) || [];
-    if (typeof updateUI === "function") updateUI(currentFavs);
+    updateUI(userFavs);
   };
 
   injectHeartButtons();

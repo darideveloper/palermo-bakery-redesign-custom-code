@@ -47,7 +47,6 @@
     font-size: 14px;
     color: #333333;
     background: #ffffff;
-    margin-bottom: 15px;
     box-sizing: border-box;
     transition: all 0.3s ease;
 }
@@ -84,3 +83,92 @@
 #my-proprietary-form button[type="submit"]:hover {
     background-color: #555555 !important;
 }
+
+/*---------------------------------------*/
+/* Horizontal form layout */
+/*---------------------------------------*/
+/* three columns grid layout */
+#sns_footer .wpb_raw_html form {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+	gap: 10px;
+}
+
+/* first column */
+#sns_footer .wpb_raw_html form label:nth-child(5) {
+    grid-column-start: 1;
+	grid-row-start: 1;
+}
+
+#sns_footer .wpb_raw_html form input[name="email"] {
+	grid-column-start: 1;
+	grid-row-start: 2;
+}
+
+/* second column */
+#sns_footer .wpb_raw_html form label:nth-child(7) {
+    grid-column-start: 2;
+	grid-row-start: 1;
+}
+
+#sns_footer .wpb_raw_html form input[name="fullname"]  {
+	grid-column-start: 2;
+	grid-row-start: 2;
+}
+
+/* third column */
+#sns_footer .wpb_raw_html form button[type="submit"] {
+    grid-column-start: 3;
+	grid-row-start: 2;
+}
+
+/* hide captcha */
+#sns_footer .wpb_raw_html form .g-recaptcha, #sns_footer .wpb_raw_html form [data-sitekey] {
+    display: none !important;
+}
+
+/* single column in mobile */
+@media screen and (max-width: 600px) {
+	#sns_footer .wpb_raw_html form {
+		grid-template-columns: repeat(1, 1fr);
+	}
+	
+	/* first column */
+	#sns_footer .wpb_raw_html form label:nth-child(5) {
+		grid-column-start: 1;
+		grid-row-start: 1;
+	}
+
+	#sns_footer .wpb_raw_html form input[name="email"] {
+		grid-column-start: 1;
+		grid-row-start: 2;
+		margin-bottom: 15px;
+	}
+
+	/* second column */
+	#sns_footer .wpb_raw_html form label:nth-child(7) {
+		grid-column-start: 1;
+		grid-row-start: 3;
+	}
+
+	#sns_footer .wpb_raw_html form input[name="fullname"]  {
+		grid-column-start: 1;
+		grid-row-start: 4;
+		margin-bottom: 15px;
+	}
+
+	/* third column */
+	#sns_footer .wpb_raw_html form button[type="submit"] {
+		grid-column-start: 1;
+		grid-row-start: 5;
+	}
+	
+	/* center icons */
+	#sns_footer .postwcode-widget > div:nth-child(3) .wpb_column:nth-child(3) .vc_column-inner > .wpb_wrapper {
+		display: flex;
+    	align-items: center;
+    	justify-content: center;
+    	margin-top: 10px;
+	}
+}
+

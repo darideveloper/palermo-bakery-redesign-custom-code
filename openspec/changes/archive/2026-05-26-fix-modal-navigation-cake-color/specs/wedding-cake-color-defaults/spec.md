@@ -1,9 +1,4 @@
-# Capability: wedding-cake-color-defaults
-
-## Purpose
-Ensure wedding cake order pages have a reliable and intuitive color selection behavior, defaulting to White and handling mutual exclusivity between White and Ivory.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Default Color Selection
 The wedding cake order form SHALL automatically select the "White" color option upon page load if no color is already selected.

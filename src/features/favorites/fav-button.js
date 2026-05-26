@@ -199,6 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
       userFavs.push(productId);
     }
     
+    userFavs = [...new Set(userFavs)];
     updateUI(userFavs);
     syncToServer(userFavs);
   };
@@ -409,7 +410,8 @@ document.addEventListener("DOMContentLoaded", () => {
         .then((res) => res.json())
         .then((response) => {
           if (response.success && response.data) {
-            userFavs = response.data.split(",").filter(Boolean);
+            const rawFavs = response.data.split(",").filter(Boolean);
+            userFavs = [...new Set(rawFavs)];
             
             // Legacy Cleanup
             localStorage.removeItem("my_cake_favs");

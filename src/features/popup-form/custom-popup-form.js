@@ -29,8 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.insertAdjacentHTML('beforeend', popupShellHTML);
 
     // 2. Locate the specific CF7 form and move it
-    // Strictly target the specific form ID to avoid affecting other forms on the page
-    const cf7Form = document.querySelector('#wpcf7-f1874-o1 .wpcf7-form');
+    // Use attribute-starts-with selector to match any occurrence suffix (-o1, -o2, etc.)
+    const cf7Form = document.querySelector('[id^="wpcf7-f1874"] .wpcf7-form');
     const popupContent = document.querySelector('#popup-form-container .popup-content');
     const formContainer = document.getElementById('popup-form-container');
 

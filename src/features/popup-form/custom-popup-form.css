@@ -3,8 +3,8 @@
    ========================================= */
 
 /* 0. Flashing Prevention */
-/* Hide the specific source CF7 container and the popup wrapper initially */
-#wpcf7-f1874-o1,
+/* Hide the CF7 form 1874 (any occurrence suffix -o1, -o2, etc.) and the popup wrapper initially */
+[id^="wpcf7-f1874"],
 #custom-popup-wrapper {
     display: none;
 }
@@ -122,6 +122,17 @@
 }
 
 /* 6. Contact Form 7 Scalable Styling */
+
+/* Reset theme page-specific styles that leak into the popup */
+#popup-form-container .wpcf7-form {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+    background: none !important;
+    border-radius: 0 !important;
+    box-sizing: border-box;
+    box-shadow: none !important;
+}
 
 /* Reset CF7 native paragraph wrappers and line breaks */
 #popup-form-container .wpcf7-form p {

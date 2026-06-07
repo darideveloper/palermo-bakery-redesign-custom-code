@@ -1,6 +1,38 @@
+#sns_header .main-header .mini-wishlist .tongle {
+	position: relative;
+}
+
 #sns_header .main-header .mini-wishlist .tongle:before {
-	content: "\f1fd" !important;
-	font-size: 30px !important;
+	content: "❤️" !important;
+	font-size: 24px !important;
+	color: #e74c3c !important;
+}
+
+#sns_header .main-header .mini-wishlist .tongle::after {
+	content: "Favorites Board";
+	position: absolute;
+	bottom: calc(100% + 10px);
+	left: 50%;
+	transform: translateX(-50%);
+	background: rgba(0, 0, 0, 0.85);
+	color: #fff;
+	padding: 6px 12px;
+	border-radius: 6px;
+	font-size: 14px;
+	font-family: sans-serif;
+	font-weight: normal;
+	white-space: nowrap;
+	line-height: 1;
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity 0.2s ease, visibility 0.2s ease;
+	pointer-events: none;
+	z-index: 99999;
+}
+
+#sns_header .main-header .mini-wishlist .tongle:hover::after {
+	opacity: 1;
+	visibility: visible;
 }
 
 #sns_header .main-header .mini-wishlist .tongle .number {

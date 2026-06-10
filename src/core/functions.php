@@ -1492,6 +1492,12 @@ function render_favorite_cakes_page() {
 
         <!-- MY FAVORITES SECTION -->
         <h2 id="my-favs-title" style="text-align: center; margin-bottom: 30px; font-weight: bold;">My Favorite Cakes</h2>
+        <?php if (!is_user_logged_in()): ?>
+        <div class="gallery-auth-buttons">
+            <a href="/login" class="gallery-auth-btn">Login</a>
+            <a href="/register" class="gallery-auth-btn signup">Sign Up</a>
+        </div>
+        <?php endif; ?>
         <p id="fav-loading-msg" style="text-align: center;">Loading your favorite cakes...</p>
         <div id="favorite-cakes-list" class="cake-masonry-grid"></div>
         

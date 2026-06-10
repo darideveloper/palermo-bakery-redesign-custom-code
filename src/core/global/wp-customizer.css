@@ -1,4 +1,4 @@
-@media (max-width: 768px) {
+@media (max-width: 990px) {
   .left-mheader {
     width: 23%;
 		position: absolute;
@@ -20,7 +20,9 @@
   
   .cart-account {
     width: 20%;
-		display: none;
+		position: absolute;
+    right: 0;
+		display: inline-block !important;
   }
 	
 }
@@ -77,3 +79,8 @@ body {
 body.woocommerce #sns_header .main-header .login-regis {
     padding-right: 18px;
 	display: none !important;}
+
+#sns_slideshow {
+    margin-bottom: -6px !important;
+}
+

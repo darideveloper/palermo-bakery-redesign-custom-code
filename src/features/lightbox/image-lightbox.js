@@ -3,48 +3,6 @@ jQuery(document).ready(function ($) {
   if (window.cakeGalleryScriptLoaded) return;
   window.cakeGalleryScriptLoaded = true;
 
-  // --- 0. THUMBNAIL SENTINEL GUARD ---
-  // PHP appends "?t=300" so any rogue URL-rewriter whose regex anchors to
-  // .jpg$/.png$/etc. is a no-op on our thumbnails. This MutationObserver
-  // is a fallback in case anything else swaps src back to a full-size URL.
-  var THUMB_SUFFIX = "-300x300";
-  var SENTINEL = "?t=300";
-  function enforceThumb(img) {
-    var src = img.getAttribute("src") || "";
-    if (src.indexOf(SENTINEL) !== -1) return; // already protected
-    var m = src.match(/^([^?]+?)(?:-\d+x\d+)?\.(jpg|jpeg|png|webp)(?:\?.*)?$/i);
-    if (!m) return;
-    if (src.indexOf("/uploads/") === -1) return;
-    img.setAttribute("src", m[1] + THUMB_SUFFIX + "." + m[2] + SENTINEL);
-  }
-  function enforceAllThumbs() {
-    var nodes = document.querySelectorAll("#sns_woo_list .product-image img");
-    for (var i = 0; i < nodes.length; i++) enforceThumb(nodes[i]);
-  }
-
-  // Persistent guard: watch every gallery img for src mutations and revert
-  // immediately. The check inside enforceThumb prevents recursion (it skips
-  // imgs whose src already contains the sentinel).
-  var srcGuard = null;
-  if (window.MutationObserver) {
-    srcGuard = new MutationObserver(function (records) {
-      for (var i = 0; i < records.length; i++) {
-        var t = records[i].target;
-        if (t && t.tagName === "IMG") enforceThumb(t);
-      }
-    });
-  }
-  function attachSrcGuard(scope) {
-    if (!srcGuard) return;
-    var root = scope && scope.length ? scope[0] : document;
-    var nodes = root.querySelectorAll
-      ? root.querySelectorAll("#sns_woo_list .product-image img, .product-image img")
-      : [];
-    for (var i = 0; i < nodes.length; i++) {
-      srcGuard.observe(nodes[i], { attributes: true, attributeFilter: ["src"] });
-    }
-  }
-
   var galleryTimeout;
 
   var PRETTYPHOTO_OPTIONS = {
@@ -69,10 +27,10 @@ jQuery(document).ready(function ($) {
 
   /**
    * Prepare a single product card. Idempotent — safe to call repeatedly.
-   * iOS Safari freeze fix: swap the spinner-GIF src for the real thumbnail,
-   * mark the img as native-lazy, and strip the `.lazy` class so the legacy
+   * Swaps the spinner-GIF src for the full-resolution image, marks the img
+   * as native-lazy, and strips the `.lazy` class so the legacy
    * jquery.lazyload scroll-handler ignores it. 300+ animated GIFs decoding
-   * in parallel is what was locking up the main thread.
+   * in parallel was what was locking up the main thread.
    */
   function prepareCard($card) {
     if ($card.hasClass("gallery-ready")) return;
@@ -93,14 +51,8 @@ jQuery(document).ready(function ($) {
     var isSpinner = currentSrc.indexOf("prod_loading") !== -1 || currentSrc === "";
 
     if (originalSrc) {
-      var isOptimized = originalSrc.indexOf("-300x300") !== -1;
-      var thumbnailSrc = isOptimized
-        ? originalSrc
-        : originalSrc.replace(/(.*)(\.(?:jpg|jpeg|png|webp))$/i, "$1-300x300$2");
-
       var fullResSrc =
-        $img.attr("data-lightbox-src") ||
-        originalSrc.replace(/-300x300(?=\.\w+$)/i, "");
+        $img.attr("data-lightbox-src") || originalSrc;
 
       if ($link.length && $link.attr("href") !== fullResSrc) {
         $link.attr("href", fullResSrc);
@@ -114,16 +66,16 @@ jQuery(document).ready(function ($) {
       $img.attr("decoding", "async");
       $img.removeAttr("srcset");
 
-      // Replace the animated spinner GIF with the real thumbnail. With
+      // Replace the animated spinner GIF with the full-resolution image. With
       // loading="lazy", the browser only fetches when near viewport.
       if (isSpinner) {
-        $img.attr("src", thumbnailSrc);
+        $img.attr("src", originalSrc);
       }
 
       // Disarm jquery.lazyload for this img — its scroll handler is the
       // other half of the iOS freeze.
       $img.removeClass("lazy");
-      $img.attr("data-original", thumbnailSrc);
+      $img.attr("data-original", originalSrc);
     }
 
     $card.addClass("gallery-ready");
@@ -196,21 +148,11 @@ jQuery(document).ready(function ($) {
     clearTimeout(galleryTimeout);
     galleryTimeout = setTimeout(function () {
       processCards($scope);
-      enforceAllThumbs();
-      attachSrcGuard($scope);
     }, 250);
   }
 
   // --- EXECUTION ---
   processCards();
-
-  // Belt-and-braces: PHP already added the sentinel query string. These
-  // calls only matter for imgs PHP missed (none in the gallery, but
-  // defensive). The MutationObserver catches any future src swap.
-  enforceAllThumbs();
-  attachSrcGuard();
-  setTimeout(function () { enforceAllThumbs(); attachSrcGuard(); }, 500);
-  setTimeout(function () { enforceAllThumbs(); attachSrcGuard(); }, 1500);
 
   // --- 4. LIGHTBOX CLOSE REDIRECTION ---
   // Intercept clicks on the prettyPhoto close button and redirect them to the

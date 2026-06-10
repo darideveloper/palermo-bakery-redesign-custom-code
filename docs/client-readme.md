@@ -109,7 +109,7 @@ add_filter( 'woocommerce_redirect_single_search_result', '__return_false' );
 ```
 
 Three OpenSpec capabilities govern the gallery's behaviour:
-- `gallery-optimization` — the iOS Safari performance contract (thumbnail rewrites, sentinels, lazy-loading, third-party-script removal).
+- `gallery-optimization` — the iOS Safari performance contract (full-res gallery images, sentinels, lazy-loading, third-party-script removal).
 - `gallery-auth-buttons` — Login/Sign-Up pills for guests, output via `woocommerce_before_shop_loop`.
 - `gallery-fav-pill` — the "♥ Favorite Cakes" pill injected as the first `<li>` in the category filter row.
 
@@ -123,8 +123,8 @@ We chose to make the site a pure gallery (no shopping cart, no price tags, no si
 
 The deep technical decision tree centres on the iPhone Safari freeze that emerged after 297 products were uploaded. The fix is layered:
 
-1. **Server-side image rewrite.** A `template_redirect` output buffer in `src/core/functions.php` (~line 1201) rewrites every gallery `<img>` so the `src` points at the WooCommerce-generated 300×300 thumbnail, adds `loading="lazy"` and `decoding="async"`, strips the `lazy` CSS class (so the theme's `jquery.lazyload` scroll handler ignores them), and removes `srcset` entirely.
-2. **URL sentinels.** Thumbnails get `?t=300` appended; the lightbox source gets `?l=1` appended (stored in a new `data-lightbox-src` attribute). These literal query strings defeat a rogue URL-rewriter regex anchored to `.jpg$`/`.png$`/`.webp$`. WordPress ignores unknown query params, so the same image bytes are served either way.
+1. **Server-side image rewrite.** A `template_redirect` output buffer in `src/core/functions.php` (~line 1192) rewrites every gallery `<img>` so the `src` and `data-original` point at the full-resolution image (no dimension-suffix downgrade), adds `loading="lazy"` and `decoding="async"`, strips the `lazy` CSS class (so the theme's `jquery.lazyload` scroll handler ignores them), and removes `srcset` entirely.
+2. **URL sentinels.** Gallery images get `?t=300` appended to `src`/`data-original`; the lightbox source gets `?l=1` appended (stored in a `data-lightbox-src` attribute). These literal query strings defeat a rogue URL-rewriter regex anchored to `.jpg$`/`.png$`/`.webp$`. WordPress ignores unknown query params, so the same image bytes are served either way.
 3. **Rogue script removal.** The same output buffer strips inline `<script>` blocks containing `const stripSuffix` or `const updateImagesAndHide`, declared by the "Simple Custom CSS and JS" plugin from a previous developer that was forcing image re-fetches every 450 ms.
 4. **Third-party blocker dequeue.** A `wp_enqueue_scripts` hook at priority 100 dequeues `wc-cart-fragments`, `wc-add-to-cart`, the WordPress emoji actions, and strips an inline reCAPTCHA `<script>` — all of which were preventing the browser `load` event from firing on iPhones.
 5. **Gallery-view predicate.** A helper `_palermo_is_gallery_view()` returns `is_shop() || is_product_category() || is_product_tag() || is_page('cake-gallery')`. Every gallery-only hook guards with this. `is_page('cake-gallery')` alone is insufficient — `/cake-gallery/` is the shop archive, where `is_page()` returns false.

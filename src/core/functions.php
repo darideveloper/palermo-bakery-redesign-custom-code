@@ -1189,15 +1189,6 @@ function dari_developer_disable_product_pages() {
 
 // =============== START This section is for optimize gallery images ============
 
-add_filter('woocommerce_get_image_size_shop_catalog', function ($size) {
-    return array(
-        'width'  => 300,
-        'height' => 300,
-        'crop'   => 1,
-    );
-});
-
-
 add_action('template_redirect', function () {
     if (
         !is_shop() &&
@@ -1241,6 +1232,8 @@ add_action('template_redirect', function () {
         // breaks the regex's end-of-string anchor — the rogue script becomes
         // a no-op on our gallery images, while the image still fetches the
         // same file (WordPress ignores unknown query params).
+        // Gallery images load at full resolution (no -300x300 dimension suffix)
+        // to match the quality of the lightbox view.
         $thumb_sentinel = '?t=300';
 
         // Match <img> with "shop_catalog" in class AND data-original
@@ -1252,43 +1245,42 @@ add_action('template_redirect', function () {
                 $ext       = $m[2];
                 $full_tag  = $m[0];
 
-                $is_optimized = (strpos($path, '-300x300') !== false);
-                $thumb_base   = ($is_optimized ? $path : $path . '-300x300') . '.' . $ext;
-                $full_base    = preg_replace('/-300x300$/', '', $path) . '.' . $ext;
-                $thumb_url    = $thumb_base . $thumb_sentinel;
+                // Strip any WordPress dimension suffix (e.g. -300x300, -150x150)
+                // to get the base (full-resolution) path.
+                $base_path = preg_replace('/-\d+x\d+$/', '', $path);
+                $full_url  = $base_path . '.' . $ext;
 
-                // 1) data-original → thumbnail (with sentinel)
-                //    data-lightbox-src → full-size (lightbox click target,
+                // 1) data-original → full-res URL (with sentinel)
+                //    data-lightbox-src → full-res URL (lightbox click target,
                 //    leave untouched by rogue regex by using ?l=1).
                 $full_tag = preg_replace(
                     '/\sdata-original="[^"]*"/i',
-                    ' data-original="' . $thumb_url . '"',
+                    ' data-original="' . $full_url . $thumb_sentinel . '"',
                     $full_tag,
                     1
                 );
                 if (strpos($full_tag, 'data-lightbox-src=') === false) {
                     $full_tag = preg_replace(
                         '/<img\s/i',
-                        '<img data-lightbox-src="' . $full_base . '?l=1" ',
+                        '<img data-lightbox-src="' . $full_url . '?l=1" ',
                         $full_tag,
                         1
                     );
                 } else {
                     $full_tag = preg_replace(
                         '/\sdata-lightbox-src="[^"]*"/i',
-                        ' data-lightbox-src="' . $full_base . '?l=1"',
+                        ' data-lightbox-src="' . $full_url . '?l=1"',
                         $full_tag,
                         1
                     );
                 }
 
-                // 2) Rewrite src to the thumbnail-with-sentinel, regardless
+                // 2) Rewrite src to the full-res URL with sentinel, regardless
                 //    of whether it was the spinner GIF or already an upload.
-                //    300+ animated prod_loading.gif decodes is the iOS freeze
-                //    source; sentinel defeats the rogue stripSuffix loop.
+                //    Sentinel defeats the rogue stripSuffix loop.
                 $full_tag = preg_replace(
                     '/\ssrc="[^"]*"/i',
-                    ' src="' . $thumb_url . '"',
+                    ' src="' . $full_url . $thumb_sentinel . '"',
                     $full_tag,
                     1
                 );
@@ -1307,8 +1299,8 @@ add_action('template_redirect', function () {
                     $full_tag
                 );
 
-                // Drop any srcset — we already chose the 300x300 thumbnail
-                // deliberately; srcset would re-upgrade to the full-size file.
+                // Drop any srcset — we control the exact URL and don't want
+                // the browser picking a different responsive variant.
                 $full_tag = preg_replace('/\ssrcset="[^"]*"/i', '', $full_tag);
 
                 return $full_tag;

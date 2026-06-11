@@ -35,6 +35,15 @@
 	visibility: visible;
 }
 
+/* Tablet & mobile: right-align tooltip to prevent viewport overflow */
+@media (max-width: 991px) {
+	#sns_header .main-header .mini-wishlist .tongle::after {
+		left: auto;
+		right: 0;
+		transform: none;
+	}
+}
+
 #sns_header .main-header .mini-wishlist .tongle .number {
 	top: -15px !important;
   right: -14px !important;

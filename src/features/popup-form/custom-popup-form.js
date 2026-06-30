@@ -7,11 +7,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const popupShellHTML = `
     <div id="custom-popup-wrapper">
         <!-- Floating Cupcake Trigger Button -->
-        <button id="form-trigger-btn" aria-label="Ask Me">
+        <button id="form-trigger-btn" aria-label="Contact Us">
             <div class="cupcake-container">
-                <div class="toothpick-flag">Ask Me</div>
+                <div class="toothpick-flag">Contact Us</div>
                 <!-- PNG Cupcake Icon -->
-                <img class="cupcake-img" src="https://ccdev2026.wpenginepowered.com/wp-content/uploads/2026/05/cupcake-help-icon-120.png" alt="Ask Me">
+                <img class="cupcake-img" src="https://ccdev2026.wpenginepowered.com/wp-content/uploads/2026/05/cupcake-help-icon-120.png" alt="Contact Us">
             </div>
         </button>
 

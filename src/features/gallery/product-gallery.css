@@ -314,6 +314,13 @@ div.pp_pic_holder {
     font-size: 28px !important;
 }
 
+#lightbox-fav-btn svg {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    display: block;
+}
+
 #lightbox-fav-btn:hover {
     transform: scale(1.15) !important;
 }

@@ -160,10 +160,12 @@
     transition: transform 0.2s ease, background 0.2s ease;
 }
 
-.my-custom-fav-btn img.emoji {
-    max-width: none !important;
+.my-custom-fav-btn svg,
+.save-shared-btn svg {
     width: 20px;
     height: 20px;
+    min-width: 20px;
+    display: block;
 }
 
 .my-custom-fav-btn:hover {

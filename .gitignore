@@ -31,3 +31,5 @@ fix-gallery-thumbnail-src.php
 Thumbs.db
 
 *.zip
+
+/backup

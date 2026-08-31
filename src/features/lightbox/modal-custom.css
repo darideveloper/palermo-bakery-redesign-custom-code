@@ -9,3 +9,18 @@ body > .pp_pic_holder.pp_default {
   z-index: 99999 !important;
   box-sizing: border-box !important;
 }
+
+/* PrettyPhoto lightbox title link — the .ppt is converted to <a> by
+   fav-button.js; WooCommerce's prettyPhoto.css only targets div.ppt,
+   so an a.ppt inherits default link styling (invisible on dark bg).
+   Hosted in the "Simple Custom CSS and JS" plugin entry 2068.css
+   (positioning rule) on prod. This file is the repo source of truth. */
+.pp_pic_holder.pp_default a.ppt {
+  display: block !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+  font-size: 17px !important;
+  margin: 0 0 5px 15px !important;
+  z-index: 9999 !important;
+  text-decoration: none !important;
+}

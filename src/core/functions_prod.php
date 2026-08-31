@@ -514,7 +514,58 @@ function snsvicky_cssinline(){
         // still provides the page gutter, so drop the inner padding.
         . '@media (max-width:767px){'
             . '.page-id-1109 #sns_content .vc_column-inner{padding-left:0;padding-right:0;}'
-        . '}';
+        . '}'
+        // Cupcake contact popup (custom-css-js "custom-popup-form"), mobile:
+        // its full-screen mode uses 40px+60px padding and a ~180px textarea,
+        // so the form overflows and scrolls on phones. Compact everything so
+        // the whole form fits the viewport. (Overrides the plugin entry; the
+        // extra #custom-popup-wrapper ancestor outranks its single-id rules.)
+        . '@media (max-width:600px){'
+            . '#custom-popup-wrapper #popup-form-container{padding:14px 16px !important;}'
+            . '#custom-popup-wrapper #popup-form-container .popup-content{padding-bottom:0 !important;}'
+            . '#custom-popup-wrapper #popup-form-container .popup-header{margin-bottom:4px !important;}'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-form > p:first-of-type{font-size:13px;line-height:1.45;}'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-form p{margin:0 0 10px !important;}'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-form label{font-size:13px;margin-bottom:3px;}'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-form-control:not(.wpcf7-submit){padding:9px 12px;}'
+            . '#custom-popup-wrapper #popup-form-container textarea{height:84px !important;min-height:84px !important;}'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-submit{padding:12px 20px !important;}'
+        . '}'
+        // Desktop: the 350px panel capped at 80vh still scrolls (content ~790px
+        // — overflows even tall screens, badly on 768px laptops). Widen it and
+        // compact spacing moderately so the whole form fits; cap height to the
+        // room above the cupcake anchor as a safety net.
+        . '@media (min-width:601px){'
+            . '#custom-popup-wrapper #popup-form-container{width:420px;padding:20px 24px !important;'
+                . 'max-height:calc(100vh - 150px);}'
+            . '#custom-popup-wrapper #popup-form-container .popup-header{margin-bottom:4px !important;}'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-form > p:first-of-type{font-size:13px;line-height:1.5;}'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-form p{margin:0 0 10px !important;}'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-form label{margin-bottom:3px;}'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-form-control:not(.wpcf7-submit){padding:10px 12px;}'
+            . '#custom-popup-wrapper #popup-form-container textarea{height:110px !important;min-height:110px !important;}'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-submit{padding:12px 20px !important;}'
+        . '}'
+        // Short desktop viewports (small laptops): the 90px cupcake-anchor gap
+        // wastes height the form needs — let the open panel sit nearly at the
+        // viewport bottom (covering the cupcake, which the panel replaces while
+        // open) and shorten the message box further.
+        . '@media (min-width:601px) and (max-height:820px){'
+            . '#custom-popup-wrapper #popup-form-container{bottom:0;padding:14px 20px !important;'
+                . 'max-height:calc(100vh - 70px);}'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-form p{margin:0 0 8px !important;}'
+            . '#custom-popup-wrapper #popup-form-container textarea{height:84px !important;min-height:84px !important;}'
+        . '}'
+        // Very short desktop screens (1366x768-class laptops): drop the intro
+        // helper sentence so all actual fields + submit fit without scrolling.
+        . '@media (min-width:601px) and (max-height:700px){'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-form > p:first-of-type{display:none;}'
+        . '}'
+        // While the popup is OPEN, lift the whole wrapper above the header —
+        // the site CSS puts .left-mheader (hamburger) at z-index 99999, which
+        // painted over the full-screen form on mobile. Closed, the wrapper
+        // stays at its own 9999 so the menu drawer still covers the cupcake.
+        . '#custom-popup-wrapper:has(#popup-form-container:not(.popup-hidden)){z-index:100001;}';
     // ----------------------------------------------------------------------
 
     // --- Design-system utility classes ------------------------------------
@@ -1772,8 +1823,13 @@ add_action('template_redirect', function () {
         // Match by the rogue script's actual function declaration, NOT by
         // a substring like "stripSuffix" — our own gallery script comments
         // mention that name and would otherwise be removed too.
-        $buffer = preg_replace_callback(
-            '/<script[^>]*>[\s\S]*?<\/script>/i',
+        // The script body is matched with an unrolled loop ([^<]* chunks)
+        // instead of a lazy [\s\S]*? — the lazy form counts every stepped
+        // character against pcre.backtrack_limit (1M), so any inline script
+        // over ~1MB (e.g. yith_wcwl_l10n on the full shop loop) makes preg
+        // return null and the whole page go blank.
+        $stripped = preg_replace_callback(
+            '/<script\b[^>]*>[^<]*(?:<(?!\/script\b)[^<]*)*<\/script>/i',
             function ($s) {
                 if (strpos($s[0], 'const stripSuffix') !== false
                     || strpos($s[0], 'const updateImagesAndHide') !== false) {
@@ -1783,6 +1839,9 @@ add_action('template_redirect', function () {
             },
             $buffer
         );
+        if ($stripped !== null) {
+            $buffer = $stripped;
+        }
 
         // A "Simple Custom CSS and JS" entry in WP admin runs every 450ms
         // and strips `-\d+x\d+` from any img src/data-original whose URL
@@ -1796,7 +1855,7 @@ add_action('template_redirect', function () {
 
         // Match <img> with "shop_catalog" in class AND data-original
         // pointing to /uploads/. Handles attributes in any order.
-        $buffer = preg_replace_callback(
+        $rewritten = preg_replace_callback(
             '/<img\s(?=[^>]*class="[^"]*shop_catalog[^"]*")[^>]*data-original="([^"]*?\/uploads\/[^"]*?)\.(jpg|jpeg|png|webp)(?:\?[^"]*)?"[^>]*>/i',
             function ($m) use ($thumb_sentinel) {
                 $path      = $m[1];
@@ -1865,6 +1924,9 @@ add_action('template_redirect', function () {
             },
             $buffer
         );
+        if ($rewritten !== null) {
+            $buffer = $rewritten;
+        }
 
         return $buffer;
     });
@@ -1914,12 +1976,12 @@ add_action('template_redirect', function () {
     if (!_palermo_is_gallery_view()) return;
     ob_start(function ($buffer) {
         if (empty($buffer)) return $buffer;
-        $buffer = preg_replace(
+        $stripped = preg_replace(
             '/<script[^>]*src="[^"]*google\.com\/recaptcha\/api\.js[^"]*"[^>]*><\/script>/i',
             '',
             $buffer
         );
-        return $buffer;
+        return $stripped !== null ? $stripped : $buffer;
     });
 }, 1);
 // =============== END: iOS Safari spinner fix ============
@@ -2080,7 +2142,7 @@ function ajax_render_favorite_products() {
     $args = array(
         'post_type'      => 'product',
         'post__in'       => $fav_ids,
-        'posts_per_page' => -1,
+        'posts_per_page' => -1,%"+y
         'orderby'        => 'post__in' 
     );
 
@@ -2105,10 +2167,10 @@ function ajax_render_favorite_products() {
 
                 <?php if ($is_shared): ?>
                     <!-- Button for cakes shared WITH the user -->
-                    <button class="save-shared-btn" data-product-id="<?php echo esc_attr(get_the_ID()); ?>" aria-label="Save to my favorites">🤍</button>
+                    <button class="save-shared-btn" data-product-id="<?php echo esc_attr(get_the_ID()); ?>" aria-label="Save to my favorites"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="#999" stroke-width="2"/></svg></button>
                 <?php else: ?>
                     <!-- Button for the user's OWN cakes -->
-                    <button class="my-custom-fav-btn" data-product-id="<?php echo esc_attr(get_the_ID()); ?>" aria-label="Remove from favorites">❤️</button>
+                    <button class="my-custom-fav-btn" data-product-id="<?php echo esc_attr(get_the_ID()); ?>" aria-label="Remove from favorites"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#d63031"/></svg></button>
                 <?php endif; ?>
             </div>
 

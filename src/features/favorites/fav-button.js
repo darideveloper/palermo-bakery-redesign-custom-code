@@ -31,6 +31,94 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.classList.toggle("is-favorited", isFav);
   };
 
+  // 2a. LIGHTBOX .PPT → PERMALINK LINK
+  // Build a productId → permalink map on the gallery page only. The lightbox
+  // may open anywhere, but the map is only populated where the gallery grid
+  // lives (URL path ends with /cake-gallery/). On other pages (e.g. the
+  // favorites page, category archives), the map stays empty and the JS falls
+  // back to the image-src match path against any a[data-product-permalink]
+  // anchor on the page.
+  const isGalleryPage = () => {
+    const path = window.location.pathname || "";
+    return /\/cake-gallery\/?$/.test(path) || /\/cake-gallery\/?\?/.test(path);
+  };
+  const productIdToPermalink = new Map();
+  const buildPermalinkMap = () => {
+    productIdToPermalink.clear();
+    if (!isGalleryPage()) return;
+    document
+      .querySelectorAll("a.product-image[data-product-permalink]")
+      .forEach((anchor) => {
+        const permalink = anchor.dataset.productPermalink;
+        if (!permalink) return;
+        // Gallery card: product ID is on the YITH element inside the card.
+        const yithEl = anchor
+          .closest(".product-inner")
+          ?.querySelector(".yith-wcwl-add-to-wishlist");
+        if (yithEl && yithEl.dataset.fragmentRef) {
+          productIdToPermalink.set(yithEl.dataset.fragmentRef, permalink);
+        }
+      });
+  };
+  buildPermalinkMap();
+
+  // Resolve the permalink for a given image src + product id. Order:
+  //   1. image-src match: find an a[data-product-permalink] whose href
+  //      (after stripping ?query) matches the current lightbox image src.
+  //   2. productId map lookup using the current lightbox product id.
+  //   3. null → leave .ppt as plain text.
+  const resolveLightboxPermalink = (imgSrc, productId) => {
+    if (imgSrc) {
+      const cleanSrc = imgSrc.split("?")[0];
+      const links = document.querySelectorAll("a[data-product-permalink]");
+      for (const link of links) {
+        const linkHref = (link.getAttribute("href") || "").split("?")[0];
+        if (linkHref && linkHref === cleanSrc) {
+          return link.dataset.productPermalink || null;
+        }
+      }
+    }
+    if (productId != null) {
+      const fromMap = productIdToPermalink.get(String(productId));
+      if (fromMap) return fromMap;
+    }
+    return null;
+  };
+
+  // Convert the prettyPhoto .ppt element into a clickable permalink link.
+  // Idempotent: if it's already an <a> with the same href, do nothing.
+  const convertPptToLink = (imgSrc, productId) => {
+    const ppt = document.querySelector(".ppt");
+    if (!ppt) return;
+    const permalink = resolveLightboxPermalink(imgSrc, productId);
+    if (!permalink) {
+      // If .ppt was previously wrapped as a link, restore plain text.
+      if (ppt.tagName === "A") {
+        const span = document.createElement("span");
+        span.className = "ppt";
+        span.textContent = ppt.textContent;
+        ppt.replaceWith(span);
+      }
+      return;
+    }
+    const titleText = ppt.textContent.trim();
+    // Already a link with the same href and text — no-op.
+    if (
+      ppt.tagName === "A" &&
+      ppt.getAttribute("href") === permalink &&
+      ppt.textContent.trim() === titleText
+    ) {
+      return;
+    }
+    const link = document.createElement("a");
+    link.className = "ppt";
+    link.setAttribute("href", permalink);
+    link.setAttribute("target", "_blank");
+    link.setAttribute("rel", "noopener noreferrer");
+    link.textContent = titleText;
+    ppt.replaceWith(link);
+  };
+
   const getLightboxProductId = (imgSrc) => {
     const cleanSrc = imgSrc.split("?")[0];
     const links = document.querySelectorAll('a[data-rel^="prettyPhoto"]');
@@ -129,12 +217,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const img = container.querySelector("img");
     if (img) {
+      // Convert .ppt to a permalink link on the first render, using the
+      // current lightbox product id (which is already set by the click
+      // listener / lightbox body observer).
+      convertPptToLink(img.src, currentLightboxProductId);
+
       const attrObserver = new MutationObserver(() => {
         const newId = getLightboxProductId(img.src);
         if (newId && newId !== currentLightboxProductId) {
           currentLightboxProductId = newId;
           updateLightboxFavBtn();
         }
+        // Re-run on every src change (covers prettyPhoto's image-swap on
+        // prev/next). Idempotent if the title is already up to date.
+        convertPptToLink(img.src, currentLightboxProductId);
       });
       attrObserver.observe(img, { attributes: true, attributeFilter: ["src"] });
 
@@ -147,6 +243,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 currentLightboxProductId = newId;
                 updateLightboxFavBtn();
               }
+              convertPptToLink(node.src, currentLightboxProductId);
             }
           }
         }
@@ -234,6 +331,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (response.success) {
           listContainer.innerHTML = response.data;
           updateUI(userFavs);
+          // Rebuild the permalink map after the favorites grid is rendered
+          // (the new masonry-item anchors carry data-product-permalink).
+          buildPermalinkMap();
           if (window.palermoInitLightbox && typeof jQuery !== "undefined") {
             window.palermoInitLightbox(jQuery(listContainer));
           }
@@ -466,6 +566,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const observer = new MutationObserver((mutations, obs) => {
       obs.disconnect();
       if (typeof injectHeartButtons === "function") injectHeartButtons();
+      // Rebuild the permalink map after the gallery grid is re-rendered
+      // (e.g. category filter AJAX). The new card anchors carry
+      // data-product-permalink.
+      buildPermalinkMap();
       obs.observe(gridContainer, { childList: true, subtree: true });
     });
     observer.observe(gridContainer, { childList: true, subtree: true });

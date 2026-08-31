@@ -95,18 +95,15 @@ The visual heart of the project. The standard WooCommerce shop has been rebuilt 
 
 👤 **For the bakery team:**
 
-The page at **`/cake-gallery/`** shows all your cakes as a tidy grid of square images. Hover over a cake on a computer to see a gentle zoom; tap one on a phone to open a large, easy-to-browse popup window with arrow buttons to flip through every cake. There are **no "Add to cart" buttons**, no prices, no product detail pages — the whole site is a visual portfolio. If anyone searches for a specific cake (even an exact name), they always land inside the gallery; the old WooCommerce single-product layout has been completely turned off.
+The page at **`/cake-gallery/`** shows all your cakes as a tidy grid of square images. Hover over a cake on a computer to see a gentle zoom; tap one on a phone to open a large, easy-to-browse popup window with arrow buttons to flip through every cake. Clicking the title at the top of the popup opens that cake's full WooCommerce product page in a new tab (where the standard product layout is used, including title, price, "Add to cart", description, and related products). The popup itself has no buying chrome — it's purely for browsing the gallery.
 
 Above the grid you'll see a row of **category pills** ("All", "Wedding", "Birthday"…) plus a "♥ Favorite Cakes" pill on the far left. Guests (people not signed in) also see **Login** and **Sign Up** pills there. Click any pill to filter; a soft loading spinner appears while the page reloads.
 
 🛠 **For developers:**
 
-The gallery is the WooCommerce shop archive (template `archive-product.php` from the SNS Vicky theme) but heavily reskinned by `src/features/gallery/product-gallery.css` and `src/features/lightbox/image-lightbox.js`. The single-product redirect lives at the bottom of `src/core/functions.php`:
+The gallery is the WooCommerce shop archive (template `archive-product.php` from the SNS Vicky theme) but heavily reskinned by `src/features/gallery/product-gallery.css` and `src/features/lightbox/image-lightbox.js`. Single-product pages are reachable directly (the previous `template_redirect` redirect was removed); the gallery remains the primary entry point and the standard WC single-product template renders for any direct permalink. The lightbox title `.ppt` is converted into a clickable permalink link by `src/features/favorites/fav-button.js` (openSpec capability: `lightbox-title-permalink-link`); the product permalink is sourced from a `data-product-permalink` attribute on the gallery card anchor, populated by the image-rewrite output buffer in `src/core/functions.php`.
 
-```php
-add_action( 'template_redirect', 'dari_developer_disable_product_pages' );
-add_filter( 'woocommerce_redirect_single_search_result', '__return_false' );
-```
+> **Shop-archive blank-page fix (2026-08):** `/cake-gallery/` is the shop archive, which lists all products (349). The YITH pre-pass that stamps `data-product-permalink` onto each card previously used a lazy `.*?` regex; on the full shop archive the footer `yith_wcwl_l10n` inline script grows to ~1.1MB, which blew past `pcre.backtrack_limit` (1M), `preg_replace_callback` returned `null`, and the whole page rendered blank. The regex is now an unrolled loop (`[^<]*(?:<(?!…)[^<]*)*`) plus a null guard, mirroring the stripSuffix rewrite. If `/cake-gallery/` ever comes back empty after a deploy, check this pre-pass first.
 
 Three OpenSpec capabilities govern the gallery's behaviour:
 - `gallery-optimization` — the iOS Safari performance contract (full-res gallery images, sentinels, lazy-loading, third-party-script removal).
@@ -117,7 +114,7 @@ Three OpenSpec capabilities govern the gallery's behaviour:
 
 👤 **For the bakery team:**
 
-We chose to make the site a pure gallery (no shopping cart, no price tags, no single-product pages) because that's how the bakery's sales flow actually works — clients see cakes, then book a consultation. Showing an "Add to cart" button on a wedding cake would be misleading. The custom lightbox replaces WooCommerce's basic image popup with a more elegant viewer that scales properly on phones.
+We chose to make the site a **gallery-first** experience (no shopping cart, no price tags on the gallery cards) because that's how the bakery's sales flow actually works — clients see cakes, then book a consultation. The gallery itself stays image-only, but single-product pages are reachable (either directly via permalink or by clicking the title in the lightbox) and use the standard WooCommerce single-product template. Showing an "Add to cart" button on a wedding cake would be misleading in the gallery view, so it's hidden there; the standard WC buying flow is available on the product page itself.
 
 🛠 **For developers:**
 
@@ -146,7 +143,7 @@ The full requirement list lives in `openspec/specs/gallery-optimization/spec.md`
 
 To edit `functions.php` on the live site you must use **WP File Manager** plugin (`/wp-content/themes/snsvicky/functions.php`). The WordPress Theme File Editor on this WP Engine deployment writes to a shadow path and does not affect the running site. After editing, OPcache must be invalidated — see the [Operational maintenance guide](#operational-maintenance-guide-wp-engine-specifics) section.
 
-The single-product redirect is total — even admins logged in are bounced to the archive. If you ever need to preview a single product, comment out the `template_redirect` hook temporarily and re-enable it after.
+The single-product pages are reachable directly. If you ever need to preview a single product for testing, just visit the product's permalink — `/product/<slug>/` — in an incognito window.
 
 ---
 
@@ -293,6 +290,8 @@ Tap any cake in the gallery or favourites page and a large popup opens showing t
 
 Inside the popup, near the bottom-centre of the image, you'll see the **share icon** (left) and **heart button** (right). Both work the same as on the cards — the heart saves or unsaves the cake; the share icon copies a link to that one specific cake.
 
+The **title at the top of the popup** (e.g. "Tuxedo Birthday Cake") is a clickable link to that cake's full product page — clicking it opens the product page in a new browser tab, while the gallery stays exactly where you left it. If the title is plain text instead of a link, the system couldn't resolve the product permalink for that cake (most likely YITH is missing on that card); tell your developer which cake is affected.
+
 There is no thumbnail strip at the bottom (we removed it to keep the focus on the cake), no "expand" button, and no social-media share buttons (we use our own share system instead).
 
 🛠 **For developers:**
@@ -326,6 +325,7 @@ Capabilities involved:
 - `lightbox-close-redirection` — `.pp_close` clicks are intercepted in capture phase and forwarded to `.pp_overlay`.
 - `lightbox-fav-button` — the heart inside the lightbox.
 - `lightbox-share-button` — the share icon inside the lightbox.
+- `lightbox-title-permalink-link` — the `.ppt` title inside the lightbox is converted into a clickable link to the product permalink.
 
 ### Decision Log
 
@@ -344,6 +344,8 @@ We hid the thumbnail strip (the row of small images at the bottom of the old pop
 👤 **For the bakery team:**
 
 **The lightbox stops opening on a new page.** Most likely cause: the new page isn't the cake gallery or the favourites page (those are the only pages where the lightbox library is loaded). Tell your developer the page slug and they'll force-load the library.
+
+**The lightbox title shows as plain text instead of a clickable link.** The JS could not resolve the product permalink for the cake currently shown. Most likely cause: the YITH wishlist element is missing on that card (or has no `data-fragment-ref`). The image-src match is the primary resolution path; if it fails, the title falls back to plain text rather than emit a broken anchor. Tell your developer which cake is affected so they can verify YITH is configured for that product.
 
 **Arrow areas feel unresponsive on a desktop.** Usually a CSS conflict from a recently activated plugin. Try deactivating recent plugins one at a time in incognito mode.
 
@@ -707,7 +709,7 @@ After the update, **test in incognito** across the device matrix. Pay particular
 
 Fragile areas that often break on major updates:
 - `prettyPhoto` is bundled inside WooCommerce — a WC major release could remove it. Detect via `$.fn.prettyPhoto` check in `image-lightbox.js`.
-- YITH Wishlist updates occasionally rename `data-fragment-ref` to something else. If hearts on cards stop registering clicks, this is the first place to look.
+- YITH Wishlist updates occasionally rename `data-fragment-ref` to something else. This attribute is now consumed by **two** features: the heart button injection on gallery cards (`fav-button.js`) and the lightbox title permalink resolution (`fav-button.js` via the PHP-emitted `data-product-permalink`). A YITH rename breaks both at once. If hearts on cards stop registering clicks, this is the first place to look.
 - SNS Vicky theme updates can re-introduce the mobile logo `max-height` cap.
 - Simple Custom CSS and JS updates can reorder script execution; we use `if (window.foo) return;` guards in every JS file, so this should fail safe but is worth verifying.
 

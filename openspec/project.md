@@ -1,7 +1,7 @@
 # Project Context
 
 ## Purpose
-The purpose of this project is to transform a standard WooCommerce product grid into a beautiful, custom-designed gallery for Palermo Bakery. It focuses on creating a professional, modern visual experience with high-quality visuals and a smooth user experience, since product sales are disabled and the site acts as a visual gallery.
+The purpose of this project is to transform a standard WooCommerce product grid into a beautiful, custom-designed gallery for Palermo Bakery. It focuses on creating a professional, modern visual experience with high-quality visuals and a smooth user experience. The gallery itself acts as a visual portfolio (no buying chrome on the cards), while individual single-product pages are reachable directly via permalink or via the clickable title in the lightbox popup.
 
 ## Tech Stack
 - Vanilla HTML
@@ -31,7 +31,7 @@ The purpose of this project is to transform a standard WooCommerce product grid 
 
 ## Domain Context
 - **Palermo Bakery**: The website is for a bakery.
-- **Gallery Mode**: WooCommerce is used as a backend for managing products, but the frontend is strictly a visual gallery (buying features are hidden).
+- **Gallery Mode**: WooCommerce is used as a backend for managing products. The gallery frontend is a visual gallery (buying features are hidden on the cards and in the lightbox popup). Single-product pages are reachable and render the standard WooCommerce single-product template.
 - **Environment**: Changes are deployed to a WordPress staging/production environment (e.g., `ccdev2026.wpenginepowered.com`).
 
 ## Important Constraints

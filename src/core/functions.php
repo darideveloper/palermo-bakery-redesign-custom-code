@@ -514,7 +514,58 @@ function snsvicky_cssinline(){
         // still provides the page gutter, so drop the inner padding.
         . '@media (max-width:767px){'
             . '.page-id-1109 #sns_content .vc_column-inner{padding-left:0;padding-right:0;}'
-        . '}';
+        . '}'
+        // Cupcake contact popup (custom-css-js "custom-popup-form"), mobile:
+        // its full-screen mode uses 40px+60px padding and a ~180px textarea,
+        // so the form overflows and scrolls on phones. Compact everything so
+        // the whole form fits the viewport. (Overrides the plugin entry; the
+        // extra #custom-popup-wrapper ancestor outranks its single-id rules.)
+        . '@media (max-width:600px){'
+            . '#custom-popup-wrapper #popup-form-container{padding:14px 16px !important;}'
+            . '#custom-popup-wrapper #popup-form-container .popup-content{padding-bottom:0 !important;}'
+            . '#custom-popup-wrapper #popup-form-container .popup-header{margin-bottom:4px !important;}'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-form > p:first-of-type{font-size:13px;line-height:1.45;}'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-form p{margin:0 0 10px !important;}'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-form label{font-size:13px;margin-bottom:3px;}'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-form-control:not(.wpcf7-submit){padding:9px 12px;}'
+            . '#custom-popup-wrapper #popup-form-container textarea{height:84px !important;min-height:84px !important;}'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-submit{padding:12px 20px !important;}'
+        . '}'
+        // Desktop: the 350px panel capped at 80vh still scrolls (content ~790px
+        // — overflows even tall screens, badly on 768px laptops). Widen it and
+        // compact spacing moderately so the whole form fits; cap height to the
+        // room above the cupcake anchor as a safety net.
+        . '@media (min-width:601px){'
+            . '#custom-popup-wrapper #popup-form-container{width:420px;padding:20px 24px !important;'
+                . 'max-height:calc(100vh - 150px);}'
+            . '#custom-popup-wrapper #popup-form-container .popup-header{margin-bottom:4px !important;}'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-form > p:first-of-type{font-size:13px;line-height:1.5;}'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-form p{margin:0 0 10px !important;}'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-form label{margin-bottom:3px;}'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-form-control:not(.wpcf7-submit){padding:10px 12px;}'
+            . '#custom-popup-wrapper #popup-form-container textarea{height:110px !important;min-height:110px !important;}'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-submit{padding:12px 20px !important;}'
+        . '}'
+        // Short desktop viewports (small laptops): the 90px cupcake-anchor gap
+        // wastes height the form needs — let the open panel sit nearly at the
+        // viewport bottom (covering the cupcake, which the panel replaces while
+        // open) and shorten the message box further.
+        . '@media (min-width:601px) and (max-height:820px){'
+            . '#custom-popup-wrapper #popup-form-container{bottom:0;padding:14px 20px !important;'
+                . 'max-height:calc(100vh - 70px);}'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-form p{margin:0 0 8px !important;}'
+            . '#custom-popup-wrapper #popup-form-container textarea{height:84px !important;min-height:84px !important;}'
+        . '}'
+        // Very short desktop screens (1366x768-class laptops): drop the intro
+        // helper sentence so all actual fields + submit fit without scrolling.
+        . '@media (min-width:601px) and (max-height:700px){'
+            . '#custom-popup-wrapper #popup-form-container .wpcf7-form > p:first-of-type{display:none;}'
+        . '}'
+        // While the popup is OPEN, lift the whole wrapper above the header —
+        // the site CSS puts .left-mheader (hamburger) at z-index 99999, which
+        // painted over the full-screen form on mobile. Closed, the wrapper
+        // stays at its own 9999 so the menu drawer still covers the cupcake.
+        . '#custom-popup-wrapper:has(#popup-form-container:not(.popup-hidden)){z-index:100001;}';
     // ----------------------------------------------------------------------
 
     // --- Design-system utility classes ------------------------------------
@@ -1723,25 +1774,6 @@ function nt_single_product_after_content() {
 add_action( 'woocommerce_after_single_product_summary', 'nt_single_product_after_content', 5 );
 
 
-/**
- * FIX: Disable WooCommerce Single Result Redirect
- * Ensures that searching for a single product stays on the grid/archive page.
- */
-add_filter( 'woocommerce_redirect_single_search_result', '__return_false' );
-
-/**
- * OPTIONAL: Security Redirect
- * If any single product page is accessed directly, redirect to the gallery.
- */
-add_action( 'template_redirect', 'dari_developer_disable_product_pages' );
-function dari_developer_disable_product_pages() {
-    if ( is_product() ) {
-        wp_redirect( get_post_type_archive_link( 'product' ) );
-        exit;
-    }
-}
-
-
 // =============== This section is for favorite button ============
 
 
@@ -1772,8 +1804,13 @@ add_action('template_redirect', function () {
         // Match by the rogue script's actual function declaration, NOT by
         // a substring like "stripSuffix" — our own gallery script comments
         // mention that name and would otherwise be removed too.
-        $buffer = preg_replace_callback(
-            '/<script[^>]*>[\s\S]*?<\/script>/i',
+        // The script body is matched with an unrolled loop ([^<]* chunks)
+        // instead of a lazy [\s\S]*? — the lazy form counts every stepped
+        // character against pcre.backtrack_limit (1M), so any inline script
+        // over ~1MB (e.g. yith_wcwl_l10n on the full shop loop) makes preg
+        // return null and the whole page go blank.
+        $stripped = preg_replace_callback(
+            '/<script\b[^>]*>[^<]*(?:<(?!\/script\b)[^<]*)*<\/script>/i',
             function ($s) {
                 if (strpos($s[0], 'const stripSuffix') !== false
                     || strpos($s[0], 'const updateImagesAndHide') !== false) {
@@ -1783,6 +1820,9 @@ add_action('template_redirect', function () {
             },
             $buffer
         );
+        if ($stripped !== null) {
+            $buffer = $stripped;
+        }
 
         // A "Simple Custom CSS and JS" entry in WP admin runs every 450ms
         // and strips `-\d+x\d+` from any img src/data-original whose URL
@@ -1796,7 +1836,7 @@ add_action('template_redirect', function () {
 
         // Match <img> with "shop_catalog" in class AND data-original
         // pointing to /uploads/. Handles attributes in any order.
-        $buffer = preg_replace_callback(
+        $rewritten = preg_replace_callback(
             '/<img\s(?=[^>]*class="[^"]*shop_catalog[^"]*")[^>]*data-original="([^"]*?\/uploads\/[^"]*?)\.(jpg|jpeg|png|webp)(?:\?[^"]*)?"[^>]*>/i',
             function ($m) use ($thumb_sentinel) {
                 $path      = $m[1];
@@ -1865,6 +1905,76 @@ add_action('template_redirect', function () {
             },
             $buffer
         );
+        if ($rewritten !== null) {
+            $buffer = $rewritten;
+        }
+
+        // Pre-pass: enrich every <a class="product-image"> with
+        // data-product-permalink built from the YITH data-fragment-ref in the
+        // same card. We match each product card as a whole, then within that
+        // card add the attribute to its own a.product-image. Cards without a
+        // YITH element are skipped; anchors already carrying
+        // data-product-permalink are skipped (idempotent).
+        //
+        // The card wrapper is the theme's <div class="... post-{ID} product
+        // type-product ..."> (NOT WooCommerce's default <li class="product">),
+        // so we anchor on the stable `post-{ID}` token in the wrapper class.
+        //
+        // The body is an UNROLLED loop (mirroring the stripSuffix regex above)
+        // instead of a lazy `.*?(?=...)` — the lazy form counts every stepped
+        // character against pcre.backtrack_limit (1M). On the shop archive
+        // (all 349 products) the yith_wcwl_l10n footer script grows to ~1.1MB,
+        // so the last card's lazy scan returns null and the whole page goes
+        // blank (0 bytes). The unrolled `[^<]*(?:<(?!card-start)[^<]*)*` steps
+        // per '<' tag instead of per character, staying far below the limit.
+        // The negative lookahead stops the body at the next card wrapper, so
+        // each match is exactly one card, nested divs and all.
+        //
+        // Why per-card instead of per-YITH-window: the earlier window-walking
+        // version mutated $buffer by reference inside preg_replace_callback,
+        // which is discarded when the result is re-assigned to $buffer — no
+        // attribute was ever emitted. Matching the card boundary guarantees
+        // each card's YITH maps to its own anchor.
+        //
+        // The assignment is null-guarded (like the stripSuffix/img rewrites):
+        // if preg_replace_callback ever returns null for any reason, keep the
+        // original buffer instead of blanking the page.
+        $card_start = '<div\b[^>]*class="[^"]*\bpost-\d+\b[^"]*"[^>]*>';
+        // The unrolled body consumes `<` only when it does NOT open the next
+        // card wrapper: the `<` is matched by the `(?:<(?!...)[^<]*)*` group,
+        // so the negative lookahead is anchored WITHOUT the leading `<`.
+        $card_head = 'div\b[^>]*class="[^"]*\bpost-\d+\b[^"]*"[^>]*>';
+        $enriched = preg_replace_callback(
+            '/' . $card_start . '[^<]*(?:<(?!' . $card_head . ')[^<]*)*/is',
+            function ($card) {
+                $block = $card[0];
+                if (strpos($block, 'data-product-permalink=') !== false) {
+                    return $block; // Already enriched (idempotent).
+                }
+                if (!preg_match('/\bdata-fragment-ref="(\d+)"/i', $block, $y)) {
+                    return $block; // No YITH element in this card; skip.
+                }
+                $product_id = (int) $y[1];
+                if ($product_id <= 0) {
+                    return $block;
+                }
+                $permalink = get_permalink($product_id);
+                if (!$permalink) {
+                    return $block;
+                }
+                $enriched_block = preg_replace(
+                    '/(<a\b[^>]*class="[^"]*\bproduct-image\b[^"]*"[^>]*)>/i',
+                    '$1 data-product-permalink="' . esc_url($permalink) . '">',
+                    $block,
+                    1
+                );
+                return $enriched_block !== null ? $enriched_block : $block;
+            },
+            $buffer
+        );
+        if ($enriched !== null) {
+            $buffer = $enriched;
+        }
 
         return $buffer;
     });
@@ -1914,12 +2024,12 @@ add_action('template_redirect', function () {
     if (!_palermo_is_gallery_view()) return;
     ob_start(function ($buffer) {
         if (empty($buffer)) return $buffer;
-        $buffer = preg_replace(
+        $stripped = preg_replace(
             '/<script[^>]*src="[^"]*google\.com\/recaptcha\/api\.js[^"]*"[^>]*><\/script>/i',
             '',
             $buffer
         );
-        return $buffer;
+        return $stripped !== null ? $stripped : $buffer;
     });
 }, 1);
 // =============== END: iOS Safari spinner fix ============
@@ -2098,7 +2208,8 @@ function ajax_render_favorite_products() {
                 <a href="<?php echo esc_url($image_url); ?>"
                    data-rel="prettyPhoto[fav-gallery]"
                    title="<?php echo esc_attr(get_the_title()); ?>"
-                   data-product-id="<?php echo esc_attr(get_the_ID()); ?>">
+                   data-product-id="<?php echo esc_attr(get_the_ID()); ?>"
+                   data-product-permalink="<?php echo esc_url(get_permalink(get_the_ID())); ?>">
                     <img src="<?php echo esc_url($image_url); ?>" alt="<?php echo esc_attr(get_the_title()); ?>">
                     <div class="masonry-label"><?php echo esc_html(get_the_title()); ?></div>
                 </a>

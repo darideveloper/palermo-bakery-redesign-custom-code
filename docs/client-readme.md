@@ -1,6 +1,6 @@
 ---
 created: 2026-05-17
-updated: 2026-05-17
+updated: 2026-08-31
 tags:
   - work
   - client-docs
@@ -347,6 +347,8 @@ We hid the thumbnail strip (the row of small images at the bottom of the old pop
 
 **The lightbox title shows as plain text instead of a clickable link.** The JS could not resolve the product permalink for the cake currently shown. Most likely cause: the YITH wishlist element is missing on that card (or has no `data-fragment-ref`). The image-src match is the primary resolution path; if it fails, the title falls back to plain text rather than emit a broken anchor. Tell your developer which cake is affected so they can verify YITH is configured for that product.
 
+**The title resets or shows the wrong cake name when navigating.** The title text is re-resolved from the same authoritative source as the permalink — the matching card's anchor `title` (or its `.item-title a` text), falling back to a `productId → title` map — rather than the previously rendered `.ppt` text. It updates correctly on prev/next and keyboard navigation; if it ever reads stale on a new page/card, tell your developer which card, as that points to a missing YITH element or map entry.
+
 **Arrow areas feel unresponsive on a desktop.** Usually a CSS conflict from a recently activated plugin. Try deactivating recent plugins one at a time in incognito mode.
 
 🛠 **For developers:**
@@ -435,7 +437,7 @@ The floating cupcake widget that appears on every page of the site.
 
 A **small cupcake graphic with a little toothpick flag that says "Ask Me"** sits permanently in the bottom-right corner of every page. Click it. A modal appears with a short message explaining clients can fill out the form to be contacted by a cake consultant within 24-48 hours. The form collects **Name, Email, Phone, and Message**. Submit, wait for the green confirmation, and the popup closes itself after 3 seconds.
 
-On a phone, the popup goes full-screen for easy typing. On a desktop, it sits as a polished card next to the cupcake.
+On a phone, the popup goes full-screen for easy typing. On a desktop, it sits as a polished card next to the cupcake. The form was respaced so it fits the screen without scrolling on phones and small laptops.
 
 🛠 **For developers:**
 
@@ -456,6 +458,7 @@ We chose **Contact Form 7** as the form engine so you can edit the form fields, 
 - **Historical:** the original popup (commit `945f21e`, May 5, 2026) submitted a hardcoded form to a proprietary daridev mail API with `api_key`, `user`, `subject`, `redirect` hidden fields. This was migrated to CF7 in commit `f5a899f` (May 6, 2026). The original integration is gone; CF7 is the only live path.
 - **DOM relocation, not form rebuild.** We never construct the form's `<input>`s in JS. We let CF7 render its own form in the DOM, then move it. This means CF7's native validation, error messages, AJAX submission, and `wpcf7mailsent` event all "just work" inside the popup.
 - **Anti-flash CSS** hides both `#wpcf7-f1874-o1` (the source CF7 wrapper) and `#custom-popup-wrapper` initially; the wrapper is revealed only after the JS finishes moving the form, preventing a flicker.
+- **Responsive / overlay fixes (2026-08):** the popup CSS in `src/core/functions.php` (`snsvicky_cssinline()`) compacts the form for phones (smaller padding, 84px textarea), widens + caps the height of the desktop panel so it fits without scrolling, and — while the popup is open — lifts `#custom-popup-wrapper` to `z-index:100001` via `:has(...)` so the full-screen mobile form isn't painted over by the `z-index:99999` hamburger header. The `#custom-popup-wrapper` ancestor outranks the plugin's single-id rules.
 
 ### Maintenance Guide
 
@@ -729,6 +732,16 @@ Send a **screenshot or short video from your phone** showing the issue. That spe
 
 ---
 
+## Recent changes
+
+**2026-08-31**
+
+- 👤 **Product pages are now reachable.** Every cake's popup title is a link that opens that cake's full product page in a new tab. Single-product pages can also be opened directly by their link — no more being redirected back to the gallery.
+- 👤 **Popup titles always match the cake you're viewing.** Flip between cakes with the arrows or the keyboard and the title (and its link) follows correctly, instead of staying stuck on the first cake's name.
+- 🛠 Wiring for the permalink title link lives in `src/features/favorites/fav-button.js` and the PHP-enriched `data-product-permalink` attribute in `src/core/functions.php`. This also fixed a **blank `/cake-gallery/` page** (a regex backtrack-limit bug on the full 349-product archive) — see the gallery section's blank-page note above. OpenSpec capabilities: `lightbox-title-permalink-link`, `single-product-page-access`.
+
+---
+
 ## Future enhancements (not yet delivered)
 
 **Nothing in this section is delivered today.** Each item requires a separate scope. Use this list as a menu for follow-up work — items here have been discussed in past project conversations and the scope is already partly understood, so they're cheaper to revisit than to design from scratch.
@@ -742,9 +755,6 @@ Send a **screenshot or short video from your phone** showing the issue. That spe
 ### ESP / marketing-list automation
 **Discussed scope:** today the bakery exports the WP user list manually to feed a newsletter tool. A future enhancement would automate this — connect WordPress user registration directly to a chosen email-marketing service so new sign-ups land in a newsletter list without manual export. Tool choice (MailerLite, Mailchimp, Klaviyo, etc.) deliberately left open for the future engagement.
 
-### Multi-language support (i18n)
-**Discussed scope:** today every UI string ("My Favorite Cakes", "Cakes Shared With You", "Link Copied!", "Ask Me", "Login", "Sign Up", "Loading your favorite cakes…") is hardcoded in English. Adding multi-language support would extract these into a translation table, integrate WPML or Polylang for the page-content layer, and verify all custom CSS/JS still works under right-to-left languages.
-
 ### Third colour option on the wedding-cake switcher
 **Discussed scope:** today the switcher offers White and Ivory. A third option (the previously mentioned candidate was a warm cream / off-white) would require: another checkbox in the form (CF7 side), an extension to the swap logic in the JS file (a third colour token to match against filenames), and a new naming convention for the third variant. All four frozen exceptions would also need their third-variant filename mapped if they're to support it.
 
@@ -753,4 +763,4 @@ Send a **screenshot or short video from your phone** showing the issue. That spe
 
 ---
 
-*Document maintained at `docs/client-readme.md`. The binding technical contract for every feature lives in `openspec/specs/`; this document is the human narrative companion to those specs. Last updated: 2026-05-17.*
+*Document maintained at `docs/client-readme.md`. The binding technical contract for every feature lives in `openspec/specs/`; this document is the human narrative companion to those specs. Last updated: 2026-08-31.*

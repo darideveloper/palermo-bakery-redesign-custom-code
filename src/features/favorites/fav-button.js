@@ -43,8 +43,10 @@ document.addEventListener("DOMContentLoaded", () => {
     return /\/cake-gallery\/?$/.test(path) || /\/cake-gallery\/?\?/.test(path);
   };
   const productIdToPermalink = new Map();
+  const productIdToTitle = new Map();
   const buildPermalinkMap = () => {
     productIdToPermalink.clear();
+    productIdToTitle.clear();
     if (!isGalleryPage()) return;
     document
       .querySelectorAll("a.product-image[data-product-permalink]")
@@ -56,7 +58,14 @@ document.addEventListener("DOMContentLoaded", () => {
           .closest(".product-inner")
           ?.querySelector(".yith-wcwl-add-to-wishlist");
         if (yithEl && yithEl.dataset.fragmentRef) {
+          const title =
+            (anchor.getAttribute("title") || "").trim() ||
+            anchor
+              .closest(".product-inner")
+              ?.querySelector(".item-title a")?.textContent?.trim() ||
+            "";
           productIdToPermalink.set(yithEl.dataset.fragmentRef, permalink);
+          if (title) productIdToTitle.set(yithEl.dataset.fragmentRef, title);
         }
       });
   };
@@ -85,6 +94,38 @@ document.addEventListener("DOMContentLoaded", () => {
     return null;
   };
 
+  // Resolve the cake name for a given image src + product id. Mirrors
+  // resolveLightboxPermalink so title and link always refer to the same cake.
+  // Order:
+  //   1. image-src match: find an a[data-product-permalink] whose href
+  //      matches the current lightbox image src; use its title attr, falling
+  //      back to its .item-title a text.
+  //   2. productIdToTitle map lookup using the current lightbox product id.
+  //   3. null → caller leaves the current title text unchanged.
+  const resolveLightboxTitle = (imgSrc, productId) => {
+    if (imgSrc) {
+      const cleanSrc = imgSrc.split("?")[0];
+      const links = document.querySelectorAll("a[data-product-permalink]");
+      for (const link of links) {
+        const linkHref = (link.getAttribute("href") || "").split("?")[0];
+        if (linkHref && linkHref === cleanSrc) {
+          const title =
+            (link.getAttribute("title") || "").trim() ||
+            link
+              .closest(".product-inner")
+              ?.querySelector(".item-title a")?.textContent?.trim() ||
+            "";
+          if (title) return title;
+        }
+      }
+    }
+    if (productId != null) {
+      const fromMap = productIdToTitle.get(String(productId));
+      if (fromMap) return fromMap;
+    }
+    return null;
+  };
+
   // Convert the prettyPhoto .ppt element into a clickable permalink link.
   // Idempotent: if it's already an <a> with the same href, do nothing.
   const convertPptToLink = (imgSrc, productId) => {
@@ -101,8 +142,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       return;
     }
-    const titleText = ppt.textContent.trim();
-    // Already a link with the same href and text — no-op.
+    const titleText = resolveLightboxTitle(imgSrc, productId) || ppt.textContent.trim();
+    // Already a link with the same href and text — no-op (idempotent).
     if (
       ppt.tagName === "A" &&
       ppt.getAttribute("href") === permalink &&

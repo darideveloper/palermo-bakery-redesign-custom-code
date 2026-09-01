@@ -16,6 +16,10 @@
 - `docs/client-readme.md` is the bakery-team-facing documentation. Update when
   behavior changes; do not rewrite for style.
 
+- `docs/client-readme.pdf` is generated from `docs/client-readme.md` — do not
+  hand-edit the PDF. Regenerate via `npm run docs:pdf` (pandoc + wkhtmltopdf
+  with `-V margin-*=8mm -V maxwidth=none`).
+
 - `openspec/` is the change-management workspace. New work goes under
   `openspec/changes/<name>/`. Archived work lives under
   `openspec/changes/archive/`.

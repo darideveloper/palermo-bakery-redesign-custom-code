@@ -1,6 +1,7 @@
+<!-- pdf: npm run docs:pdf — pandoc docs/client-readme.md -o docs/client-readme.pdf --pdf-engine=wkhtmltopdf -V margin-top=8mm -V margin-bottom=8mm -V margin-left=8mm -V margin-right=8mm -V maxwidth=none -->
 ---
 created: 2026-05-17
-updated: 2026-08-31
+updated: 2026-09-01
 tags:
   - work
   - client-docs
@@ -101,7 +102,7 @@ Above the grid you'll see a row of **category pills** ("All", "Wedding", "Birthd
 
 🛠 **For developers:**
 
-The gallery is the WooCommerce shop archive (template `archive-product.php` from the SNS Vicky theme) but heavily reskinned by `src/features/gallery/product-gallery.css` and `src/features/lightbox/image-lightbox.js`. Single-product pages are reachable directly (the previous `template_redirect` redirect was removed); the gallery remains the primary entry point and the standard WC single-product template renders for any direct permalink. The lightbox title `.ppt` is converted into a clickable permalink link by `src/features/favorites/fav-button.js` (openSpec capability: `lightbox-title-permalink-link`); the product permalink is sourced from a `data-product-permalink` attribute on the gallery card anchor, populated by the image-rewrite output buffer in `src/core/functions.php`.
+The gallery is the WooCommerce shop archive (template `archive-product.php` from the SNS Vicky theme) but heavily reskinned by `src/features/gallery/product-gallery.css` and `src/features/lightbox/image-lightbox.js`. Single-product pages are reachable directly (the previous `template_redirect` redirect was removed); the gallery remains the primary entry point and the standard WC single-product template renders for any direct permalink. The lightbox title `.ppt` is converted into a clickable permalink link by `src/features/favorites/fav-button.js` (openSpec capability: `lightbox-title-permalink-link`); the product permalink is sourced from a `data-product-permalink` attribute on the gallery card anchor, populated by the image-rewrite output buffer in `src/core/functions.php`. The same file also guards empty-description product tabs (`woocommerce_product_tabs` priority `200` at `src/core/functions.php:2241`) so those pages render `200` instead of `500`.
 
 > **Shop-archive blank-page fix (2026-08):** `/cake-gallery/` is the shop archive, which lists all products (349). The YITH pre-pass that stamps `data-product-permalink` onto each card previously used a lazy `.*?` regex; on the full shop archive the footer `yith_wcwl_l10n` inline script grows to ~1.1MB, which blew past `pcre.backtrack_limit` (1M), `preg_replace_callback` returned `null`, and the whole page rendered blank. The regex is now an unrolled loop (`[^<]*(?:<(?!…)[^<]*)*`) plus a null guard, mirroring the stripSuffix rewrite. If `/cake-gallery/` ever comes back empty after a deploy, check this pre-pass first.
 
@@ -727,6 +728,7 @@ Contact your developer if any of these symptoms appear and clearing the cache + 
 - Favourites stop syncing across devices for logged-in users.
 - A share link opens an empty page or shows the wrong cake.
 - The colour switcher on the wedding-cake page doesn't change one of the cakes (and you've already verified the filename convention).
+- A product page shows “There has been a critical error on this website” or `HTTP 500` (the empty-description tab bug fixed on `2026-09-01`). If this recurs, check **WP Engine Site Portal → Logs** or `wp-content/debug.log` for the `tabs.php:44` `call_user_func` `TypeError`; the guard lives in `src/core/functions.php:2241`.
 
 Send a **screenshot or short video from your phone** showing the issue. That speeds up diagnosis enormously.
 
@@ -739,6 +741,11 @@ Send a **screenshot or short video from your phone** showing the issue. That spe
 - 👤 **Product pages are now reachable.** Every cake's popup title is a link that opens that cake's full product page in a new tab. Single-product pages can also be opened directly by their link — no more being redirected back to the gallery.
 - 👤 **Popup titles always match the cake you're viewing.** Flip between cakes with the arrows or the keyboard and the title (and its link) follows correctly, instead of staying stuck on the first cake's name.
 - 🛠 Wiring for the permalink title link lives in `src/features/favorites/fav-button.js` and the PHP-enriched `data-product-permalink` attribute in `src/core/functions.php`. This also fixed a **blank `/cake-gallery/` page** (a regex backtrack-limit bug on the full 349-product archive) — see the gallery section's blank-page note above. OpenSpec capabilities: `lightbox-title-permalink-link`, `single-product-page-access`.
+
+**2026-09-01**
+
+- 👤 **Empty-description product pages no longer show a server error.** Cakes without a description (58% of the catalogue — `sesame-street-smash-cake`, `watercolor-blooms-cake`, `roblox-birthday-cake`, `rangers-hockey-cake` were verified) previously returned `HTTP 500` with a WordPress “critical error” page. They now render correctly with `HTTP 200` (title, gallery, summary; the empty description tab is hidden).
+- 🛠 Guard filter `woocommerce_product_tabs` in `src/core/functions.php:2241` (priority `200`, `!is_array` guard, `!is_callable` → `unset`) drops a callback-less `description` tab emitted by a plugin when `post_content` is empty, before `wp-content/themes/snsvicky/woocommerce/single-product/tabs/tabs.php:44` calls `call_user_func`. Deployed identically to live `wp-content/themes/snsvicky/functions.php` and `src/core/functions_prod.php`. Spec: `single-product-page-access`.
 
 ---
 

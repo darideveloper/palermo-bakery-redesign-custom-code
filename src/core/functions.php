@@ -2232,3 +2232,21 @@ function ajax_render_favorite_products() {
     wp_reset_postdata();
     wp_send_json_success(ob_get_clean());
 }
+
+// =============== START: fix empty-description product tabs 500 ===============
+// Drop any product tab that arrived without a valid callback. A plugin emits a
+// callback-less "description" tab when post_content is empty, which fatals in
+// the theme's tabs.php (call_user_func on undefined callback). Valid tabs are
+// untouched.
+add_filter( 'woocommerce_product_tabs', function ( $tabs ) {
+    if ( ! is_array( $tabs ) ) {
+        return $tabs;
+    }
+    foreach ( $tabs as $key => $tab ) {
+        if ( ! isset( $tab['callback'] ) || ! is_callable( $tab['callback'] ) ) {
+            unset( $tabs[ $key ] );
+        }
+    }
+    return $tabs;
+}, 200 );
+// =============== END: fix empty-description product tabs 500 ===============

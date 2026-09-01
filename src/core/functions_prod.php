@@ -1774,25 +1774,6 @@ function nt_single_product_after_content() {
 add_action( 'woocommerce_after_single_product_summary', 'nt_single_product_after_content', 5 );
 
 
-/**
- * FIX: Disable WooCommerce Single Result Redirect
- * Ensures that searching for a single product stays on the grid/archive page.
- */
-add_filter( 'woocommerce_redirect_single_search_result', '__return_false' );
-
-/**
- * OPTIONAL: Security Redirect
- * If any single product page is accessed directly, redirect to the gallery.
- */
-add_action( 'template_redirect', 'dari_developer_disable_product_pages' );
-function dari_developer_disable_product_pages() {
-    if ( is_product() ) {
-        wp_redirect( get_post_type_archive_link( 'product' ) );
-        exit;
-    }
-}
-
-
 // =============== This section is for favorite button ============
 
 
@@ -1926,6 +1907,73 @@ add_action('template_redirect', function () {
         );
         if ($rewritten !== null) {
             $buffer = $rewritten;
+        }
+
+        // Pre-pass: enrich every <a class="product-image"> with
+        // data-product-permalink built from the YITH data-fragment-ref in the
+        // same card. We match each product card as a whole, then within that
+        // card add the attribute to its own a.product-image. Cards without a
+        // YITH element are skipped; anchors already carrying
+        // data-product-permalink are skipped (idempotent).
+        //
+        // The card wrapper is the theme's <div class="... post-{ID} product
+        // type-product ..."> (NOT WooCommerce's default <li class="product">),
+        // so we anchor on the stable `post-{ID}` token in the wrapper class.
+        //
+        // The body is an UNROLLED loop (mirroring the stripSuffix regex above)
+        // instead of a lazy `.*?(?=...)` — the lazy form counts every stepped
+        // character against pcre.backtrack_limit (1M). On the shop archive
+        // (all 349 products) the yith_wcwl_l10n footer script grows to ~1.1MB,
+        // so the last card's lazy scan returns null and the whole page goes
+        // blank (0 bytes). The unrolled `[^<]*(?:<(?!card-start)[^<]*)*` steps
+        // per '<' tag instead of per character, staying far below the limit.
+        // The negative lookahead stops the body at the next card wrapper, so
+        // each match is exactly one card, nested divs and all.
+        //
+        // Why per-card instead of per-YITH-window: the earlier window-walking
+        // version mutated $buffer by reference inside preg_replace_callback,
+        // which is discarded when the result is re-assigned to $buffer — no
+        // attribute was ever emitted. Matching the card boundary guarantees
+        // each card's YITH maps to its own anchor.
+        //
+        // The assignment is null-guarded (like the stripSuffix/img rewrites):
+        // if preg_replace_callback ever returns null for any reason, keep the
+        // original buffer instead of blanking the page.
+        $card_start = '<div\b[^>]*class="[^"]*\bpost-\d+\b[^"]*"[^>]*>';
+        // The unrolled body consumes `<` only when it does NOT open the next
+        // card wrapper: the `<` is matched by the `(?:<(?!...)[^<]*)*` group,
+        // so the negative lookahead is anchored WITHOUT the leading `<`.
+        $card_head = 'div\b[^>]*class="[^"]*\bpost-\d+\b[^"]*"[^>]*>';
+        $enriched = preg_replace_callback(
+            '/' . $card_start . '[^<]*(?:<(?!' . $card_head . ')[^<]*)*/is',
+            function ($card) {
+                $block = $card[0];
+                if (strpos($block, 'data-product-permalink=') !== false) {
+                    return $block; // Already enriched (idempotent).
+                }
+                if (!preg_match('/\bdata-fragment-ref="(\d+)"/i', $block, $y)) {
+                    return $block; // No YITH element in this card; skip.
+                }
+                $product_id = (int) $y[1];
+                if ($product_id <= 0) {
+                    return $block;
+                }
+                $permalink = get_permalink($product_id);
+                if (!$permalink) {
+                    return $block;
+                }
+                $enriched_block = preg_replace(
+                    '/(<a\b[^>]*class="[^"]*\bproduct-image\b[^"]*"[^>]*)>/i',
+                    '$1 data-product-permalink="' . esc_url($permalink) . '">',
+                    $block,
+                    1
+                );
+                return $enriched_block !== null ? $enriched_block : $block;
+            },
+            $buffer
+        );
+        if ($enriched !== null) {
+            $buffer = $enriched;
         }
 
         return $buffer;
@@ -2142,7 +2190,7 @@ function ajax_render_favorite_products() {
     $args = array(
         'post_type'      => 'product',
         'post__in'       => $fav_ids,
-        'posts_per_page' => -1,%"+y
+        'posts_per_page' => -1,
         'orderby'        => 'post__in' 
     );
 
@@ -2160,7 +2208,8 @@ function ajax_render_favorite_products() {
                 <a href="<?php echo esc_url($image_url); ?>"
                    data-rel="prettyPhoto[fav-gallery]"
                    title="<?php echo esc_attr(get_the_title()); ?>"
-                   data-product-id="<?php echo esc_attr(get_the_ID()); ?>">
+                   data-product-id="<?php echo esc_attr(get_the_ID()); ?>"
+                   data-product-permalink="<?php echo esc_url(get_permalink(get_the_ID())); ?>">
                     <img src="<?php echo esc_url($image_url); ?>" alt="<?php echo esc_attr(get_the_title()); ?>">
                     <div class="masonry-label"><?php echo esc_html(get_the_title()); ?></div>
                 </a>
@@ -2183,3 +2232,21 @@ function ajax_render_favorite_products() {
     wp_reset_postdata();
     wp_send_json_success(ob_get_clean());
 }
+
+// =============== START: fix empty-description product tabs 500 ===============
+// Drop any product tab that arrived without a valid callback. A plugin emits a
+// callback-less "description" tab when post_content is empty, which fatals in
+// the theme's tabs.php (call_user_func on undefined callback). Valid tabs are
+// untouched.
+add_filter( 'woocommerce_product_tabs', function ( $tabs ) {
+    if ( ! is_array( $tabs ) ) {
+        return $tabs;
+    }
+    foreach ( $tabs as $key => $tab ) {
+        if ( ! isset( $tab['callback'] ) || ! is_callable( $tab['callback'] ) ) {
+            unset( $tabs[ $key ] );
+        }
+    }
+    return $tabs;
+}, 200 );
+// =============== END: fix empty-description product tabs 500 ===============
